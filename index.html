@@ -473,7 +473,7 @@
 </div>
 
 <script>
-  // 1. Load the YouTube IFrame Player API code asynchronously.
+  // 1. Load YouTube API
   var tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -481,8 +481,28 @@
 
   var player;
   var highlightTimer;
-  // REPLACE THIS ID with the actual YouTube Video ID for the Suprabhatam audio you want to use
+  var currentActiveVerse = null;
   const videoId = '0sDTj36XhOs'; 
+
+  // 2. CENTRALIZED TIMING DATA
+  // Format: verse_number: [start_time, end_time]
+  const verseTimings = {
+    1: [0, 17],
+    2: [18, 40],
+    3: [41, 60],
+    4: [61, 80],
+    5: [81, 100],
+    6: [101, 120],
+    7: [121, 140],
+    8: [141, 150],
+    9: [151, 170],
+    10: [171, 190],
+    11: [191, 210],
+    12: [211, 230],
+    13: [143, 154], // Note: Use the actual audio seconds here
+    14: [155, 166],
+    // ... Add the rest of your timings here
+  };
 
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
@@ -490,15 +510,14 @@
       width: '1',
       videoId: videoId,
       playerVars: { 'autoplay': 0, 'controls': 0 },
-      events: {
-        'onStateChange': onPlayerStateChange
-      }
+      events: { 'onStateChange': onPlayerStateChange }
     });
   }
 
   function playVideo() {
     const btn = document.getElementById('playBtn');
-    if (player.getPlayerState() == YT.PlayerState.PLAYING) {
+    const state = player.getPlayerState();
+    if (state == YT.PlayerState.PLAYING) {
       player.pauseVideo();
       btn.innerText = "Play Audio";
     } else {
@@ -518,46 +537,49 @@
   function startHighlighting() {
     highlightTimer = setInterval(() => {
       const currentTime = player.getCurrentTime();
-      const words = document.querySelectorAll('.word');
       
-      words.forEach(word => {
-        const start = parseFloat(word.getAttribute('data-s'));
-        const end = parseFloat(word.getAttribute('data-e'));
-        const parentGrid = word.closest('.verse-grid');
+      Object.keys(verseTimings).forEach(num => {
+        const [start, end] = verseTimings[num];
+        const container = document.querySelector(`.verse-container:nth-of-type(${num})`);
+        if (!container) return;
+
+        const grid = container.querySelector('.verse-grid');
 
         if (currentTime >= start && currentTime <= end) {
-          parentGrid.classList.add('active');
-          // Auto-scroll logic: keeps the active verse in view
-          parentGrid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          // Only remove if no other word in this grid is active
-          // (Simplified for Verse-level highlighting)
-          const gridWords = parentGrid.querySelectorAll('.word');
-          const anyActive = Array.from(gridWords).some(w => {
-            const s = parseFloat(w.getAttribute('data-s'));
-            const e = parseFloat(w.getAttribute('data-e'));
-            return (currentTime >= s && currentTime <= e);
-          });
-          
-          if (!anyActive) {
-            parentGrid.classList.remove('active');
+          if (currentActiveVerse !== num) {
+            // Remove active from previous
+            document.querySelectorAll('.verse-grid').forEach(g => g.classList.remove('active'));
+            
+            // Add to current
+            grid.classList.add('active');
+            currentActiveVerse = num;
+
+            // Scroll only ONCE when the verse changes
+            grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
+        } else if (currentActiveVerse === num) {
+          grid.classList.remove('active');
+          currentActiveVerse = null;
         }
       });
-    }, 100);
+    }, 200);
   }
 
   function stopHighlighting() {
     clearInterval(highlightTimer);
   }
 
-  // Allow clicking on a verse to jump to that time in the audio
-  document.querySelectorAll('.verse-grid').forEach(grid => {
-    grid.addEventListener('click', () => {
-      const firstWord = grid.querySelector('.word');
-      const startTime = parseFloat(firstWord.getAttribute('data-s'));
-      player.seekTo(startTime, true);
-      player.playVideo();
+  // Handle Clicking on a verse to seek
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.verse-container').forEach((container, index) => {
+      const verseNum = index + 1;
+      container.querySelector('.verse-grid').addEventListener('click', () => {
+        const startTime = verseTimings[verseNum][0];
+        if (startTime !== undefined) {
+          player.seekTo(startTime, true);
+          player.playVideo();
+        }
+      });
     });
   });
 </script>
