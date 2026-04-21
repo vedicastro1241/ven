@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="sa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Venkateshwara Suprabhatam - YouTube Sync</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap');
+
+  body { background-color: #FDFCF9; margin: 0; padding: 20px; color: #3E362E; font-family: 'Noto Sans', sans-serif; }
+  .main-wrapper { width: 100%; max-width: 900px; margin: 0 auto; text-align: center; }
+  
+  /* Sticky Header with Player Controls */
+  .player-header {
+    position: sticky; top: 0; background: #FDFCF9; padding: 20px 0; z-index: 1000;
+    border-bottom: 2px solid #BC6C25; margin-bottom: 30px;
+  }
+
+  .main-heading { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 28px; color: #990000; margin: 0; }
+
+  /* Hide the actual video but keep it functional */
+  #youtube-player { width: 1px; height: 1px; position: absolute; left: -9999px; }
+
+  .verse-container { margin-bottom: 25px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .verse-num { font-weight: bold; color: #BC6C25; margin-bottom: 8px; display: block; }
+
+  .verse-grid { display: flex; gap: 20px; justify-content: center; }
+  .column { flex: 1; }
+  .sanskrit { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 20px; color: #990000; text-align: right; line-height: 1.8; }
+  .roman { font-size: 15px; color: #5D4037; font-style: italic; text-align: left; line-height: 1.8; }
+
+  .word { cursor: pointer; padding: 2px 4px; transition: 0.3s; border-radius: 4px; }
+  .active { background-color: #fff176; color: #000 !important; font-weight: bold; transform: scale(1.05); display: inline-block; }
+
+  @media (max-width: 600px) {
+    .verse-grid { flex-direction: column; }
+    .sanskrit, .roman { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-wrapper">
+  <div class="player-header">
+    <div class="main-heading">श्री वेङ्कटेश्वर सुप्रभातम</div>
+    <p style="font-size: 12px; color: #666;">Click any line to jump to that part of the video</p>
+    <div id="youtube-player"></div>
+    <button onclick="playVideo()" id="playBtn" style="padding: 10px 20px; background: #BC6C25; color: white; border: none; border-radius: 5px; cursor: pointer;">Play Audio</button>
+  </div>
+
+  <div id="lyrics-content">
+    <div class="verse-container">
+      <span class="verse-num">1</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="0" data-e="5" data-m="O Rama, noble son of Kausalya! The morning twilight is appearing.">कौसल्या सुप्रजा राम पूर्वासन्ध्या प्रवर्तते ।</span><br>
+          <span class="word" data-s="6" data-e="10" data-m="Arise, O Tiger among men! The daily divine rites are to be performed.">उत्तिष्ठ नरशार्दूल कर्तव्यं दैवमाह्निकम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="0" data-e="5" data-m="...">Kausalyā supraja rāma pūrvāsandhyā pravartate |</span><br>
+          <span class="word" data-s="6" data-e="10" data-m="...">Uttiṣṭha naraśārdūla kartavyaṃ daivamāhnikam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">2</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="11" data-e="16" data-m="Arise, arise O Govinda! Arise, O one with the Garuda flag!">उत्तिष्ठोत्तिष्ठ गोविन्द उत्तिष्ठ गरुडध्वज ।</span><br>
+          <span class="word" data-s="17" data-e="22" data-m="Arise, O Beloved of Lakshmi! Grant auspiciousness to the three worlds.">उत्तिष्ठ कमलाकान्त त्रैलोक्यं मङ्गलं कुरु ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="11" data-e="16" data-m="...">Uttiṣṭhottiṣṭha govinda uttiṣṭha garuḍadhvaja |</span><br>
+          <span class="word" data-s="17" data-e="22" data-m="...">Uttiṣṭha kamalākānta trailokyaṃ maṅgalaṃ kuru ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">3</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="23" data-e="28" data-m="Mother of all worlds... beloved of Venkatesha, may it be an auspicious dawn.">मातस्समस्त जगतां मधुकैटभारेः वक्षोविहारिणि मनोहर दिव्यमूर्ते ।</span><br>
+          <span class="word" data-s="29" data-e="34" data-m="O Mistress of the world, lover of those who seek refuge... Śrī Veṅkaṭeśa, may it be your dawn.">श्रीस्वामिनि श्रितजनप्रिय दानशीले श्री वेङ्कटेश दयिते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="23" data-e="28" data-m="...">Mātas-samasta jagatāṃ madhukaiṭabhāreḥ vakṣovihāriṇi manohara divyamūrte |</span><br>
+          <span class="word" data-s="29" data-e="34" data-m="...">Śrīsvāmini śritajanapriya dānaśīle śrī veṅkaṭeśa dayite tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">4</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="35" data-e="40" data-m="Auspicious dawn to the lotus-eyed one with the pleasant face... worshipped by Parvati, Saraswati and Indrani.">तव सुप्रभातमरविन्द लोचने भवतु प्रसन्नमुख चन्द्रमण्डले ।</span><br>
+          <span class="word" data-s="41" data-e="46" data-m="Worshipped by the consorts of Brahma, Shankara and Indra... O Lord of Vrusha Hills.">विधि शङ्करेन्द्र वनिताभिरर्चिते वृश शैलनाथ दयिते दयानिधे ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="35" data-e="40" data-m="...">Tava suprabhātamaravinda locane bhavatu prasannamukha candramaṇḍale |</span><br>
+          <span class="word" data-s="41" data-e="46" data-m="...">Vidhi śaṅkarendra vanitābhirarcite vṛśa śailanātha dayite dayānidhe ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">5</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="47" data-e="52">अत्र्यादि सप्त ऋषयस्समुपास्य सन्ध्यां आकाश सिन्धु कमलानि मनोहराणि ।</span><br>
+          <span class="word" data-s="53" data-e="58">आदाय पादयुग मर्चयितुं प्रपन्नाः शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="47" data-e="52">Atryādi sapta ṛṣayassamupāsya sandhyāṃ ākāśa sindhu kamalāni manoharāṇi |</span><br>
+          <span class="word" data-s="53" data-e="58">Ādāya pādayuga marcayituṃ prapannāḥ śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">6</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="59" data-e="64">पञ्चाननाब्ज भव षण्मुख वासवाद्याः त्रैविक्रमादि चरितं विबुधाः स्तुवन्ति ।</span><br>
+          <span class="word" data-s="65" data-e="70">भाषापतिः पठति वासर शुद्धि मारात् शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="59" data-e="64">Pañcānanābja bhava ṣaṇmukha vāsavādyāḥ traivikramādi caritaṃ vibudhāḥ stuvanti |</span><br>
+          <span class="word" data-s="65" data-e="70">Bhāṣāpatiḥ paṭhati vāsara śuddhi mārāt śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">7</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="71" data-e="76">ईशत्-प्रफुल्ल सरसीरुह नारिकेल पूगद्रुमादि सुमनोहर पालिकानाम् ।</span><br>
+          <span class="word" data-s="77" data-e="82">आवाति मन्दमनिलः सहदिव्य गन्धैः शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="71" data-e="76">Īśat-praphulla sarasīruha nārikela pūgadrumādi sumanohara pālikānām |</span><br>
+          <span class="word" data-s="77" data-e="82">Āvāti mandamanilaḥ sahadivya gandhaiḥ śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">8</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="83" data-e="88">उन्मील्यनेत्र युगमुत्तम पञ्जरस्थाः पात्रावसिष्ट कदली फल पायसानि ।</span><br>
+          <span class="word" data-s="89" data-e="94">भुक्त्वाः सलील मथकेलि शुकाः पठन्ति शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="83" data-e="88">Unmīlyanetra yugamuttama pañjarasthāḥ pātrāvasiṣṭa kadalī phala pāyasāni |</span><br>
+          <span class="word" data-s="89" data-e="94">Bhuktvāḥ salīla mathakeli śukāḥ paṭhanti śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">9</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="95" data-e="100">तन्त्री प्रकर्ष मधुर स्वनया विपञ्च्या गायत्यनन्त चरितं तव नारदोऽपि ।</span><br>
+          <span class="word" data-s="101" data-e="106">भाषा समग्र मसत्-कृतचारु रम्यं शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="95" data-e="100">Tantrī prakarṣa madhura svanayā vipañcyā gāyatyananta caritaṃ tava nārado'pi |</span><br>
+          <span class="word" data-s="101" data-e="106">Bhāṣā samagra masat-kṛtacāru ramyaṃ śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">10</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="107" data-e="112">भृङ्गावली च मकरन्द रसानु विद्ध झुङ्कारगीत निनदैः सहसेवनाय ।</span><br>
+          <span class="word" data-s="113" data-e="118">निर्यात्युपान्त सरसी कमलोदरेभ्यः शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="107" data-e="112">Bhṛṅgāvalī ca makaranda rasānu viddha jhuṅkāragīta ninadaiḥ sahasevanāya |</span><br>
+          <span class="word" data-s="113" data-e="118">Niryātyupānta sarasī kamalodarebhyaḥ śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">11</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="119" data-e="124">योषागणेन वरदध्नि विमथ्यमाने घोषालयेषु दधिमन्थन तीव्रघोषाः ।</span><br>
+          <span class="word" data-s="125" data-e="130">रोषात्कलिं विदधते ककुभश्च कुम्भाः शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="119" data-e="124">Yoṣāgaṇena varadadhni vimathyamāne ghoṣālayeṣu dadhimanthana tīvraghoṣāḥ |</span><br>
+          <span class="word" data-s="125" data-e="130">Roṣātkaliṃ vidadhate kakubhaśca kumbhāḥ śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">12</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="131" data-e="136">पद्मेशमित्र शतपत्र गतालिवर्गाः हर्तुं श्रियं कुवलयस्य निजाङ्गलक्ष्म्याः ।</span><br>
+          <span class="word" data-s="137" data-e="142">भेरी निनादमिव भिभ्रति तीव्रनादम् शेषाद्रि शेखर विभो तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="131" data-e="136">Padmeśamitra śatapatra gatālivargāḥ hartuṃ śriyaṃ kuvalayasya nijāṅgalakṣmyāḥ |</span><br>
+          <span class="word" data-s="137" data-e="142">Bherī ninādamiva bibhrati tīvranādam śeṣādri śekhara vibho tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">13</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="143" data-e="148">श्रीमन्नभीष्ट वरदाखिल लोक बन्धो श्री श्रीनिवास जगदेक दयैक सिन्धो ।</span><br>
+          <span class="word" data-s="149" data-e="154">श्री देवता गृह भुजान्तर दिव्यमूर्ते श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="143" data-e="148">Śrīmannabhīṣṭa varadākhila loka bandho śrī śrīnivāsa jagadeka dayaika sindho |</span><br>
+          <span class="word" data-s="149" data-e="154">Śrī devatā gṛha bhujāntara divyamūrte śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">14</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="155" data-e="160">श्री स्वामि पुष्करिणिकाप्लव निर्मलाङ्गाः श्रेयार्थिनो हरविरिञ्चि सनन्दनाद्याः ।</span><br>
+          <span class="word" data-s="161" data-e="166">द्वारे वसन्ति वरनेत्र हतोत्त माङ्गाः श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="155" data-e="160">Śrī svāmi puṣkariṇikāplava nirmalāṅgāḥ śreyārthino haraviriñci sanandanādyāḥ |</span><br>
+          <span class="word" data-s="161" data-e="166">Dvāre vasanti varanetra hatotta māṅgāḥ śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">15</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="167" data-e="172">श्री शेषशैल गरुडाचल वेङ्कटाद्रि नारायणाद्रि वृषभाद्रि वृषाद्रि मुख्याम् ।</span><br>
+          <span class="word" data-s="173" data-e="178">आख्यां त्वदीय वसते रनिशं वदन्ति श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="167" data-e="172">Śrī śeṣaśaila garuḍācala veṅkaṭādri nārāyaṇādri vṛṣabhādri vṛṣādri mukhyām |</span><br>
+          <span class="word" data-s="173" data-e="178">Ākhyāṃ tvadīya vasate raniśaṃ vadanti śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">16</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="179" data-e="184">सेवापराः शिव सुरेश कृशानुधर्म रक्षोम्बुनाथ पवमान धनाधि नाथाः ।</span><br>
+          <span class="word" data-s="185" data-e="190">बद्धाञ्जलि प्रविलसन्निज शीर्षदेशाः श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="179" data-e="184">Sevāparāḥ śiva sureśa kṛśānudharma rakṣombunātha pavamāna dhanādhi nāthāḥ |</span><br>
+          <span class="word" data-s="185" data-e="190">Baddhāñjali pravilassannija śīrṣadeśāḥ śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">17</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="191" data-e="196">धाटीषु ते विहगराज मृगाधिराज नागाधिराज गजराज हयाधिराजाः ।</span><br>
+          <span class="word" data-s="197" data-e="202">स्वस्वाधिकार महिमाधिक मर्थयन्ते श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="191" data-e="196">Dhāṭīṣu te vihagarāja mṛgādhirāja nāgādhirāja gajarāja hayādhirājāḥ |</span><br>
+          <span class="word" data-s="197" data-e="202">Svasvādhikāra mahimādhika marthayante śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">18</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="203" data-e="208">सूर्येन्दु भौम बुधवाक्पति काव्यशौरि स्वर्भानुकेतु दिविशत्-परिशत्-प्रधानाः ।</span><br>
+          <span class="word" data-s="209" data-e="214">त्वद्दासदास चरमावधि दासदासाः श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="203" data-e="208">Sūryendu bhauma budhavākpati kāvyaśauri svarbhānuketu diviśat-pariśat-pradhānāḥ |</span><br>
+          <span class="word" data-s="209" data-e="214">Tvaddāsadāsa caramāvadhi dāsadāsāḥ śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">19</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="215" data-e="220">तत्-पादधूलि भरित स्फुरितोत्तमाङ्गाः स्वर्गापवर्ग निरपेक्ष निजान्तरङ्गाः ।</span><br>
+          <span class="word" data-s="221" data-e="226">कल्पागमा कलनयाऽऽकुलतां लभन्ते श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="215" data-e="220">Tat-pādadhūli bharita sphuritottamāṅgāḥ svargāpavarga nirapekṣa nijāntaraṅgāḥ |</span><br>
+          <span class="word" data-s="221" data-e="226">Kalpāgamā kalanayā' 'kulatāṃ labhante śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">20</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="227" data-e="232">त्वद्गोपुराग्र शिखराणि निरीक्षमाणाः स्वर्गापवर्ग पदवीं परमां श्रयन्तः ।</span><br>
+          <span class="word" data-s="233" data-e="238">मर्त्या मनुष्य भुवने मतिमाश्रयन्ते श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="227" data-e="232">Tvadgopurāgra śikharāṇi nirīkṣamāṇāḥ svargāpavarga padavīṃ paramāṃ śrayantaḥ |</span><br>
+          <span class="word" data-s="233" data-e="238">Martyā manuṣya bhuvane matimāśrayante śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">21</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="239" data-e="244">श्री भूमिनायक दयादि गुणामृताब्दे देवादिदेव जगदेक शरण्यमूर्ते ।</span><br>
+          <span class="word" data-s="245" data-e="250">श्रीमन्ननन्त गरुडादिभि रर्चिताङ्घ्रे श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="239" data-e="244">Śrī bhūmināyaka dayādi guṇāmṛtābde devādideva jagadeka śaraṇyamūrte |</span><br>
+          <span class="word" data-s="245" data-e="250">Śrīmannananta garuḍādibhi rarcitāṅghre śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">22</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="251" data-e="256">श्री पद्मनाभ पुरुषोत्तम वासुदेव वैकुण्ठ माधव जनार्दन चक्रपाणे ।</span><br>
+          <span class="word" data-s="257" data-e="262">श्री वत्स चिह्न शरणागत पारिजात श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="251" data-e="256">Śrī padmanābha puruṣottama vāsudeva vaikuṇṭha mādhava janārdana cakrapāṇe |</span><br>
+          <span class="word" data-s="257" data-e="262">Śrī vatsa cihna śaraṇāgata pārijāta śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">23</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="263" data-e="268">कन्दर्प दर्प हर सुन्दर दिव्य मूर्ते कान्ता कुचाम्बुरुह कुट्मल लोलदृष्टे ।</span><br>
+          <span class="word" data-s="269" data-e="274">कल्याण निर्मल गुणाकर दिव्यकीर्ते श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="263" data-e="268">Kandarpa darpa hara sundara divya mūrte kāntā kucāmburuha kuṭmala loladṛṣṭe |</span><br>
+          <span class="word" data-s="269" data-e="274">Kalyāṇa nirmala guṇākara divyakīrte śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">24</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="275" data-e="280">मीनाकृते कमठकोल नृसिंह वर्णिन् स्वामिन् परश्वथ तपोधन रामचन्द्र ।</span><br>
+          <span class="word" data-s="281" data-e="286">शेषांशराम यदुनन्दन कल्किरूप श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="275" data-e="280">Mīnākṛte kamaṭhakola nṛsiṃha varṇin svāmin paraśvatha tapodhana rāmacandra |</span><br>
+          <span class="word" data-s="281" data-e="286">Śeṣāṃśarāma yadunandana kalkirūpa śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">25</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="287" data-e="292">एलालवङ्ग घनसार सुगन्धि तीर्थं दिव्यं वियत्सरिति हेमघटेषु पूर्णम् ।</span><br>
+          <span class="word" data-s="293" data-e="298">धृत्वाद्य वैदिक शिखामणयः प्रहृष्टाः तिष्ठन्ति वेङ्कटपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="287" data-e="292">Elālavaṅga ghanasāra sugandhi tīrthaṃ divyaṃ viyatsariti hemaghaṭeṣu pūrṇam |</span><br>
+          <span class="word" data-s="293" data-e="298">Dhṛtvādya vaidika śikhāmaṇayaḥ prahṛṣṭāḥ tiṣṭhanti veṅkaṭapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">26</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="299" data-e="304">भास्वानुदेति विकचानि सरोरुहाणि सम्पूरयन्ति निनदैः ककुभो विहङ्गाः ।</span><br>
+          <span class="word" data-s="305" data-e="310">श्रीवैष्णवाः सतत मर्थित मङ्गलास्ते धामाश्रयन्ति तव वेङ्कट सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="299" data-e="304">Bhāsvānudeti vikacāni saroruhāṇi sampūrayanti ninadaiḥ kakubho vihaṅgāḥ |</span><br>
+          <span class="word" data-s="305" data-e="310">Śrīvaiṣṇavāḥ satata marthita maṅgalāste dhāmāśrayanti tava veṅkaṭa suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">27</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="311" data-e="316">ब्रह्मादय-स्सुरवरा-स्समहर्षयस्ते सन्तस्सनन्दन-मुखास्त्वथ योगिवर्याः ।</span><br>
+          <span class="word" data-s="317" data-e="322">धामान्तिके तव हि मङ्गलवस्तुहस्ताः श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="311" data-e="316">Brahmādaya-ssuravarā-ssamaharṣayaste santassanandana-mukhāstvatha yogivaryāḥ |</span><br>
+          <span class="word" data-s="317" data-e="322">Dhāmāntike tava hi maṅgalavastuhastāḥ śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">28</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="323" data-e="328">लक्श्मीनिवास निरवद्य गुणैक सिन्धो संसारसागर समुत्तरणैक सेतो ।</span><br>
+          <span class="word" data-s="329" data-e="334">वेदान्त वेद्य निजवैभव भक्त भोग्य श्री वेङ्कटाचलपते तव सुप्रभातम् ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="323" data-e="328">Lakṣmīnivāsa niravadya guṇaika sindho saṃsārasāgara samuttaraṇaika seto |</span><br>
+          <span class="word" data-s="329" data-e="334">Vedānta vedya nijavaibhava bhakta bhogya śrī veṅkaṭācalapate tava suprabhātam ||</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verse-container">
+      <span class="verse-num">29</span>
+      <div class="verse-grid">
+        <div class="column sanskrit">
+          <span class="word" data-s="335" data-e="340">इत्थं वृषाचलपतेरिह सुप्रभातं ये मानवाः प्रतिदिनं पठितुं प्रवृत्ताः ।</span><br>
+          <span class="word" data-s="341" data-e="346">तेषां प्रभात समये स्मृतिरङ्गभाजां प्रज्ञां परार्थ सुलभां परमां प्रसूते ॥</span>
+        </div>
+        <div class="column roman">
+          <span class="word" data-s="335" data-e="340">Itthaṃ vṛṣācalapateriha suprabhātaṃ ye mānavāḥ pratidinaṃ paṭhituṃ pravṛttāḥ |</span><br>
+          <span class="word" data-s="341" data-e="346">Teṣāṃ prabhāta samaye smṛtiraṅgabhājāṃ prajñāṃ parārtha sulabhāṃ paramāṃ prasūte ||</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // 1. Load the YouTube IFrame Player API code asynchronously.
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  var player;
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('youtube-player', {
+      height: '0',
+      width: '0',
+      videoId: '0sDTj36XhOs', // REPLCE THIS with the ID (e.g., 'dQw4w9WgXcQ')
+      events: {
+        'onReady': onPlayerReady
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    // Start tracking time once ready
+    setInterval(updateLyrics, 100);
+  }
+
+  function playVideo() {
+    if (player.getPlayerState() == 1) {
+      player.pauseVideo();
+      document.getElementById('playBtn').innerText = "Play Audio";
+    } else {
+      player.playVideo();
+      document.getElementById('playBtn').innerText = "Pause Audio";
+    }
+  }
+
+  const words = document.querySelectorAll('.word');
+
+  function updateLyrics() {
+    if (player && player.getCurrentTime) {
+      const now = player.getCurrentTime();
+      words.forEach(w => {
+        const s = parseFloat(w.dataset.s);
+        const e = parseFloat(w.dataset.e);
+        if (now >= s && now <= e) {
+          w.classList.add('active');
+        } else {
+          w.classList.remove('active');
+        }
+      });
+    }
+  }
+
+  // Allow clicking a line to seek the YouTube video
+  words.forEach(w => {
+    w.onclick = () => {
+      const startTime = parseFloat(w.dataset.s);
+      player.seekTo(startTime, true);
+      player.playVideo();
+      document.getElementById('playBtn').innerText = "Pause Audio";
+    };
+  });
+</script>
+
+</body>
+</html>
