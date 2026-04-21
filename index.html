@@ -473,62 +473,92 @@
 </div>
 
 <script>
+  // 1. Load the YouTube IFrame Player API code asynchronously.
   var tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   var firstScriptTag = document.getElementsByTagName('script')[0];
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
   var player;
+  var highlightTimer;
+  // REPLACE THIS ID with the actual YouTube Video ID for the Suprabhatam audio you want to use
+  const videoId = '0sDTj36XhOs'; 
+
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
-      height: '0',
-      width: '0',
-      videoId: '7b2Nu1SV-pM', 
+      height: '1',
+      width: '1',
+      videoId: videoId,
+      playerVars: { 'autoplay': 0, 'controls': 0 },
       events: {
-        'onReady': onPlayerReady
+        'onStateChange': onPlayerStateChange
       }
     });
   }
 
-  function onPlayerReady(event) {
-    setInterval(updateLyrics, 100);
-  }
-
   function playVideo() {
-    if (player.getPlayerState() == 1) {
+    const btn = document.getElementById('playBtn');
+    if (player.getPlayerState() == YT.PlayerState.PLAYING) {
       player.pauseVideo();
-      document.getElementById('playBtn').innerText = "Play Audio";
+      btn.innerText = "Play Audio";
     } else {
       player.playVideo();
-      document.getElementById('playBtn').innerText = "Pause Audio";
+      btn.innerText = "Pause Audio";
     }
   }
 
-  const verses = document.querySelectorAll('.verse-grid');
+  function onPlayerStateChange(event) {
+    if (event.data == YT.PlayerState.PLAYING) {
+      startHighlighting();
+    } else {
+      stopHighlighting();
+    }
+  }
 
-  function updateLyrics() {
-    if (player && player.getCurrentTime) {
-      const now = player.getCurrentTime();
-      verses.forEach(v => {
-        const s = parseFloat(v.dataset.s);
-        const e = parseFloat(v.dataset.e);
-        if (now >= s && now <= e) {
-          v.classList.add('active');
+  function startHighlighting() {
+    highlightTimer = setInterval(() => {
+      const currentTime = player.getCurrentTime();
+      const words = document.querySelectorAll('.word');
+      
+      words.forEach(word => {
+        const start = parseFloat(word.getAttribute('data-s'));
+        const end = parseFloat(word.getAttribute('data-e'));
+        const parentGrid = word.closest('.verse-grid');
+
+        if (currentTime >= start && currentTime <= end) {
+          parentGrid.classList.add('active');
+          // Auto-scroll logic: keeps the active verse in view
+          parentGrid.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
-          v.classList.remove('active');
+          // Only remove if no other word in this grid is active
+          // (Simplified for Verse-level highlighting)
+          const gridWords = parentGrid.querySelectorAll('.word');
+          const anyActive = Array.from(gridWords).some(w => {
+            const s = parseFloat(w.getAttribute('data-s'));
+            const e = parseFloat(w.getAttribute('data-e'));
+            return (currentTime >= s && currentTime <= e);
+          });
+          
+          if (!anyActive) {
+            parentGrid.classList.remove('active');
+          }
         }
       });
-    }
+    }, 100);
   }
 
-  // Seek functionality for the whole verse
-  verses.forEach(v => {
-    v.onclick = () => {
-      const startTime = parseFloat(v.dataset.s);
+  function stopHighlighting() {
+    clearInterval(highlightTimer);
+  }
+
+  // Allow clicking on a verse to jump to that time in the audio
+  document.querySelectorAll('.verse-grid').forEach(grid => {
+    grid.addEventListener('click', () => {
+      const firstWord = grid.querySelector('.word');
+      const startTime = parseFloat(firstWord.getAttribute('data-s'));
       player.seekTo(startTime, true);
       player.playVideo();
-      document.getElementById('playBtn').innerText = "Pause Audio";
-    };
+    });
   });
 </script>
 
