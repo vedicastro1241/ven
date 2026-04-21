@@ -74,6 +74,14 @@
     overflow-y: auto;
     height: 100vh;
   }
+  :fullscreen .main-heading {
+  display: none;
+}
+
+:fullscreen .player-header {
+  border-bottom: none;
+  padding: 10px 0;
+}
   .verse-container { margin-bottom: 25px; padding: 10px; border-radius: 8px; transition: 0.3s; }
   .verse-num { font-weight: bold; color: #BC6C25; margin-bottom: 8px; display: block; font-size: 1.1em; }
 
@@ -712,20 +720,22 @@
   }
 
   // --- FULL SCREEN LOGIC ---
-  function toggleFullScreen() {
-    const elem = document.documentElement; // Full page
-    const fsBtn = document.getElementById('fullscreenBtn');
+function toggleFullScreen() {
+  // We use documentElement so the entire page (verses included) goes full screen
+  const elem = document.documentElement; 
 
-    if (!document.fullscreenElement) {
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      fsBtn.innerText = "Exit Full Screen";
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-      fsBtn.innerText = "Full Screen";
+  if (!document.fullscreenElement) {
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
     }
   }
+}
 
   // Monitor for Esc key exits from Full Screen
   document.addEventListener('fullscreenchange', () => {
