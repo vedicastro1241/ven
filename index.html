@@ -55,7 +55,25 @@
   }
   
   #playBtn:hover { background: #96561D; }
+/* Full-screen button styling */
+  #fullscreenBtn {
+    padding: 8px 15px;
+    background: transparent;
+    color: #BC6C25;
+    border: 1px solid #BC6C25;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+  }
 
+  /* Style adjustments when in fullscreen mode */
+  :fullscreen .main-wrapper {
+    background-color: #FDFCF9;
+    padding: 40px;
+    overflow-y: auto;
+    height: 100vh;
+  }
   .verse-container { margin-bottom: 25px; padding: 10px; border-radius: 8px; transition: 0.3s; }
   .verse-num { font-weight: bold; color: #BC6C25; margin-bottom: 8px; display: block; font-size: 1.1em; }
 
@@ -103,10 +121,10 @@
 
     <div class="controls-bar">
       <button onclick="playVideo()" id="playBtn">Play Audio</button>
-
+      <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
       <div class="control-group">
         <span>Volume</span>
-        <input type="range" id="volumeSlider" min="0" max="100" value="100" oninput="setVolume(this.value)">
+        <input type="range" id="volumeSlider" min="0" max="100" value="50" oninput="setVolume(this.value)">
       </div>
 
       <div class="control-group">
@@ -116,7 +134,8 @@
           <option value="0.75">0.75x</option>
           <option value="1" selected>1x (Normal)</option>
           <option value="1.25">1.25x</option>
-          <option value="1.5">1.5x</option>
+          <option value="1.5">1.5x</option>          
+          <option value="2.0">2x</option>
         </select>
       </div>
     </div>
@@ -666,41 +685,55 @@
       height: '1',
       width: '1',
       videoId: videoId,
-      playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0 },
+      playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0, 'enablejsapi': 1 },
       events: { 'onStateChange': onPlayerStateChange }
     });
   }
 
-  // --- NEW CONTROL FUNCTIONS ---
+  // --- AUDIO CONTROLS ---
   function setVolume(val) {
-    if (player && player.setVolume) {
-      player.setVolume(val);
-    }
+    if (player && player.setVolume) player.setVolume(val);
   }
 
   function setSpeed(val) {
-    if (player && player.setPlaybackRate) {
-      player.setPlaybackRate(parseFloat(val));
-    }
+    if (player && player.setPlaybackRate) player.setPlaybackRate(parseFloat(val));
   }
 
   function playVideo() {
-    const btn = document.getElementById('playBtn');
     const state = player.getPlayerState();
-    
     if (state == YT.PlayerState.PLAYING) {
       player.pauseVideo();
-      btn.innerText = "Play Audio";
     } else {
-      // Sync volume and speed from UI before playing
+      // Initialize levels before play
       setVolume(document.getElementById('volumeSlider').value);
       setSpeed(document.getElementById('speedSelect').value);
-      
       player.playVideo();
-      btn.innerText = "Pause Audio";
     }
   }
 
+  // --- FULL SCREEN LOGIC ---
+  function toggleFullScreen() {
+    const elem = document.documentElement; // Full page
+    const fsBtn = document.getElementById('fullscreenBtn');
+
+    if (!document.fullscreenElement) {
+      if (elem.requestFullscreen) elem.requestFullscreen();
+      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+      fsBtn.innerText = "Exit Full Screen";
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      fsBtn.innerText = "Full Screen";
+    }
+  }
+
+  // Monitor for Esc key exits from Full Screen
+  document.addEventListener('fullscreenchange', () => {
+    const fsBtn = document.getElementById('fullscreenBtn');
+    if (!document.fullscreenElement && fsBtn) fsBtn.innerText = "Full Screen";
+  });
+
+  // --- HIGHLIGHTING & STATE LOGIC ---
   function onPlayerStateChange(event) {
     const btn = document.getElementById('playBtn');
     if (event.data == YT.PlayerState.PLAYING) {
@@ -740,7 +773,9 @@
     clearInterval(highlightTimer);
   }
 
+  // --- EVENT LISTENERS ---
   document.addEventListener('DOMContentLoaded', () => {
+    // Click a verse to jump to its time
     document.querySelectorAll('.verse-container').forEach((container, index) => {
       const verseNum = index + 1;
       const grid = container.querySelector('.verse-grid');
