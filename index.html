@@ -923,13 +923,8 @@
 
   function playVideo() {
     const btn = document.getElementById('playBtn');
-    if (player.getPlayerState() == YT.PlayerState.PLAYING) {
-      player.pauseVideo();
-    } else {
-      setVolume(document.getElementById('volumeSlider').value);
-      setSpeed(document.getElementById('speedSelect').value);
-      player.playVideo();
-    }
+    if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
+    else player.playVideo();
   }
 
   function toggleLearning() {
@@ -941,40 +936,26 @@
       btn.innerText = "Stop Learning";
       btn.style.background = "#2E7D32";
       status.innerText = "Mode: Active Repetition";
+      console.log("Learning Mode Enabled. Gears Reset.");
     } else {
       btn.innerText = "Start Learning";
       btn.style.background = "#990000";
       status.innerText = "Mode: Normal Play";
-    }
-  }
-
-  function toggleFullScreen() {
-    const elem = document.documentElement;
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
+      console.log("Learning Mode Disabled.");
     }
   }
 
   function onPlayerStateChange(event) {
     const btn = document.getElementById('playBtn');
-    if (event.data == YT.PlayerState.PLAYING) {
-      btn.innerText = "Pause Audio";
-      startHighlighting();
-    } else {
-      btn.innerText = "Play Audio";
-      stopHighlighting();
-    }
+    if (event.data == YT.PlayerState.PLAYING) { btn.innerText = "Pause Audio"; startHighlighting(); }
+    else { btn.innerText = "Play Audio"; stopHighlighting(); }
   }
 
-  // --- CORE ENGINE ---
   function startHighlighting() {
     if (highlightTimer) clearInterval(highlightTimer);
     highlightTimer = setInterval(() => {
       const currentTime = player.getCurrentTime();
-      let activeV = null;
-      let activeP = null;
+      let activeV = null, activeP = null;
 
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
         if (currentTime >= pTimes[0] && currentTime < (verseTimings[parseInt(vNum)+1]?.[0] || 9999)) {
@@ -985,10 +966,7 @@
       }
 
       if (activeV && activeP !== null) {
-        const padaId = `${activeV}-${activeP}`;
-        if (currentActivePada !== padaId) {
-          updateUI(activeV, activeP);
-        }
+        updateUI(activeV, activeP);
 
         if (isLearningMode) {
           const pReps = parseInt(document.getElementById('padaReps').value) || 1;
@@ -1002,7 +980,7 @@
           const currentVerseStart = timings[0];
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          // --- UPDATE STATUS UI ---
+          // Update Status Text
           if (pCount < (pReps - 1)) {
             status.innerText = `Pada ${activeP + 1} - ${pCount + 1}/${pReps}`;
           } else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
@@ -1014,28 +992,37 @@
             status.innerText = "Mode: Active Repetition";
           }
 
-          // --- NESTED LOOP TRIGGER ---
+          // Repetition Trigger Logic
           if (currentTime >= (nextBoundary - 0.3)) {
-            // 1. PADA LOOP (Smallest Unit)
+            
+            // 1. PADA REPEAT
             if (pCount < (pReps - 1)) {
               pCount++;
+              console.log(`[PADA REPEAT] Pada ${activeP + 1}: Play ${pCount + 1} of ${pReps}`);
               player.seekTo(currentPadaStart, true);
             } 
-            // 2. LINE LOOP (Middle Unit - triggers at Pada 2 or Pada 4)
+            // 2. LINE REPEAT (Ends at P1 or P3)
             else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
               lCount++;
               pCount = 0; // Reset padas for next line repetition
+              const lineNum = (activeP === 1) ? 1 : 2;
+              console.log(`[LINE REPEAT] Line ${lineNum}: Play ${lCount + 1} of ${lReps}`);
               player.seekTo(currentLineStart, true);
             }
-            // 3. VERSE LOOP (Largest Unit - triggers at Pada 4)
+            // 3. VERSE REPEAT (Ends at P3)
             else if (activeP === 3 && vCount < (vReps - 1)) {
               vCount++;
               lCount = 0; pCount = 0; 
+              console.log(`[VERSE REPEAT] Verse: Play ${vCount + 1} of ${vReps}`);
               player.seekTo(currentVerseStart, true);
             }
-            // 4. CLEAN RESET FOR NEXT VERSE
+            // 4. CLEAN RESET
             else if (activeP === 3) {
+              console.log(`[COMPLETED] Verse Repetitions Finished. Moving to next.`);
               pCount = 0; lCount = 0; vCount = 0;
+            } else {
+              // Transition from P0 to P1 or P2 to P3
+              pCount = 0; 
             }
           }
         }
@@ -1064,9 +1051,9 @@
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
       if (pada) {
+        console.log("Manual Jump. Resetting Gears.");
         pCount = 0; lCount = 0; vCount = 0;
-        const vContainer = pada.closest('.verse-container');
-        const vNum = vContainer.dataset.verse;
+        const vNum = pada.closest('.verse-container').dataset.verse;
         const pIdx = parseInt(pada.dataset.index);
         player.seekTo(verseTimings[vNum][pIdx], true);
         player.playVideo();
