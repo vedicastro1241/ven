@@ -888,13 +888,17 @@
   var highlightTimer;
   var currentActiveVerse = null;
   var currentActivePada = null;
-  var isLearningMode = false; // Toggle state
+  
+  // Learning State Variables
+  var isLearningMode = false;
+  var currentRepCount = 0;
+
   const videoId = '0sDTj36XhOs'; 
 
-  // 2. GRANULAR TIMING DATA
+  // Timing Data (Verse: [Pada0, Pada1, Pada2, Pada3])
   const verseTimings = { 
-    1: [0, 4, 8, 12],     2: [18, 23, 28, 34],   3: [41, 50, 60, 70], 
-    4: [81, 84, 88, 92],   5: [96, 100, 105, 110], 6: [115, 122, 129, 136],
+    1: [0, 4, 8, 12], 2: [18, 23, 28, 34], 3: [41, 50, 60, 70], 
+    4: [81, 84, 88, 92], 5: [96, 100, 105, 110], 6: [115, 122, 129, 136],
     7: [144, 145.5, 147, 148.5], 8: [151, 155, 159, 163], 9: [169, 173, 177, 181],
     10: [191, 194, 197, 200], 11: [205, 209, 213, 217], 12: [223, 226, 230, 234],
     13: [239, 248, 257, 266], 14: [277, 281, 286, 291], 15: [297, 301, 305, 309],
@@ -908,18 +912,18 @@
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
       height: '1', width: '1', videoId: videoId,
-      playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0, 'enablejsapi': 1 },
+      playerVars: { 'autoplay': 0, 'controls': 0, 'enablejsapi': 1 },
       events: { 'onStateChange': onPlayerStateChange }
     });
   }
 
-  // --- CONTROLS ---
+  // --- AUDIO CONTROLS ---
   function setVolume(val) { if (player?.setVolume) player.setVolume(val); }
   function setSpeed(val) { if (player?.setPlaybackRate) player.setPlaybackRate(parseFloat(val)); }
 
   function playVideo() {
-    const state = player.getPlayerState();
-    if (state == YT.PlayerState.PLAYING) {
+    const btn = document.getElementById('playBtn');
+    if (player.getPlayerState() == YT.PlayerState.PLAYING) {
       player.pauseVideo();
     } else {
       setVolume(document.getElementById('volumeSlider').value);
@@ -928,15 +932,20 @@
     }
   }
 
-  function toggleLearningMode() {
+  function toggleLearning() {
     isLearningMode = !isLearningMode;
-    const btn = document.getElementById('startLearningBtn');
+    const btn = document.getElementById('learningToggle');
+    const status = document.getElementById('statusLabel');
+    currentRepCount = 0; // Reset counter on toggle
+
     if (isLearningMode) {
-      btn.classList.add('learning-active');
-      btn.innerText = "Stop Learning (Looping ON)";
+      btn.innerText = "Stop Learning";
+      btn.style.background = "#2E7D32"; // Green for active
+      status.innerText = "Mode: Active Repetition";
     } else {
-      btn.classList.remove('learning-active');
       btn.innerText = "Start Learning";
+      btn.style.background = "#990000";
+      status.innerText = "Mode: Normal Play";
     }
   }
 
@@ -949,7 +958,6 @@
     }
   }
 
-  // --- HIGHLIGHTING & LOOPING ---
   function onPlayerStateChange(event) {
     const btn = document.getElementById('playBtn');
     if (event.data == YT.PlayerState.PLAYING) {
@@ -961,38 +969,38 @@
     }
   }
 
+  // --- CORE ENGINE ---
   function startHighlighting() {
     if (highlightTimer) clearInterval(highlightTimer);
     highlightTimer = setInterval(() => {
       const currentTime = player.getCurrentTime();
-      let activeVerseNum = null;
-      let activePadaIdx = null;
+      let activeV = null;
+      let activeP = null;
 
+      // Find current Verse and Pada
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
-        const verseStart = pTimes[0];
-        const nextVerseStart = verseTimings[parseInt(vNum) + 1]?.[0] || 9999;
-
-        if (currentTime >= verseStart && currentTime < nextVerseStart) {
-          activeVerseNum = vNum;
-          for (let i = 0; i < pTimes.length; i++) {
-            if (currentTime >= pTimes[i]) activePadaIdx = i;
-          }
+        if (currentTime >= pTimes[0] && currentTime < (verseTimings[parseInt(vNum)+1]?.[0] || 9999)) {
+          activeV = vNum;
+          pTimes.forEach((t, i) => { if (currentTime >= t) activeP = i; });
           break;
         }
       }
 
-      if (activeVerseNum !== null && activePadaIdx !== null) {
-        updateUI(activeVerseNum, activePadaIdx);
+      if (activeV && activeP !== null) {
+        updateUI(activeV, activeP);
 
-        // LEARNING ENGINE: Loop current pada if enabled
+        // Learning Mode Logic: Loop the current Pada
         if (isLearningMode) {
-          const currentPadaStart = verseTimings[activeVerseNum][activePadaIdx];
-          const nextSectionStart = verseTimings[activeVerseNum][activePadaIdx + 1] || 
-                                   (verseTimings[parseInt(activeVerseNum) + 1]?.[0] || 9999);
-          
-          // Jump back 0.3s before the next phrase starts
-          if (currentTime >= (nextSectionStart - 0.3)) {
-            player.seekTo(currentPadaStart, true);
+          const padaRepsAllowed = parseInt(document.getElementById('padaReps').value) || 1;
+          const nextStart = verseTimings[activeV][activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
+
+          if (currentTime >= (nextStart - 0.2)) {
+            currentRepCount++;
+            if (currentRepCount < padaRepsAllowed) {
+              player.seekTo(verseTimings[activeV][activeP], true);
+            } else {
+              currentRepCount = 0; // Reset and allow move to next pada
+            }
           }
         }
       }
@@ -1002,39 +1010,28 @@
   function updateUI(vNum, pIdx) {
     if (currentActiveVerse !== vNum) {
       document.querySelectorAll('.verse-grid').forEach(g => g.classList.remove('active'));
-      const container = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
-      if (container) {
-        const grid = container.querySelector('.verse-grid');
-        grid.classList.add('active');
-        grid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      document.querySelector(`.verse-container[data-verse="${vNum}"] .verse-grid`)?.classList.add('active');
       currentActiveVerse = vNum;
     }
-
     if (currentActivePada !== `${vNum}-${pIdx}`) {
-      document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-pada'));
-      const activePadas = document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`);
-      activePadas.forEach(p => p.classList.add('highlight-pada'));
+      document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
+      document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
+              .forEach(p => p.classList.add('highlight-active'));
       currentActivePada = `${vNum}-${pIdx}`;
     }
   }
 
   function stopHighlighting() { clearInterval(highlightTimer); }
 
-  // --- INITIALIZATION ---
+  // --- CLICKS ---
   document.addEventListener('DOMContentLoaded', () => {
-    // 1. Learning Button Listener
-    const learnBtn = document.getElementById('startLearningBtn');
-    if (learnBtn) learnBtn.addEventListener('click', toggleLearningMode);
-
-    // 2. Click a Pada to jump
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
       if (pada) {
         const vNum = pada.closest('.verse-container').dataset.verse;
         const pIdx = pada.dataset.index;
-        const jumpTime = verseTimings[vNum][pIdx];
-        player.seekTo(jumpTime, true);
+        currentRepCount = 0; // Reset reps when manually jumping
+        player.seekTo(verseTimings[vNum][pIdx], true);
         player.playVideo();
       }
     });
