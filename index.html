@@ -889,13 +889,14 @@
   var currentActiveVerse = null;
   var currentActivePada = null;
   
-  // Learning State Variables
+  // Learning State & Global Nested Counters
   var isLearningMode = false;
-  var currentRepCount = 0;
+  var pCount = 0; // Pada counter
+  var lCount = 0; // Line counter
+  var vCount = 0; // Verse counter
 
   const videoId = '0sDTj36XhOs'; 
 
-  // Timing Data (Verse: [Pada0, Pada1, Pada2, Pada3])
   const verseTimings = { 
     1: [0, 4, 8, 12], 2: [18, 23, 28, 34], 3: [41, 50, 60, 70], 
     4: [81, 84, 88, 92], 5: [96, 100, 105, 110], 6: [115, 122, 129, 136],
@@ -917,7 +918,6 @@
     });
   }
 
-  // --- AUDIO CONTROLS ---
   function setVolume(val) { if (player?.setVolume) player.setVolume(val); }
   function setSpeed(val) { if (player?.setPlaybackRate) player.setPlaybackRate(parseFloat(val)); }
 
@@ -934,13 +934,15 @@
 
   function toggleLearning() {
     isLearningMode = !isLearningMode;
+    // Reset all gears when toggling
+    pCount = 0; lCount = 0; vCount = 0;
+    
     const btn = document.getElementById('learningToggle');
     const status = document.getElementById('statusLabel');
-    currentRepCount = 0; // Reset counter on toggle
 
     if (isLearningMode) {
       btn.innerText = "Stop Learning";
-      btn.style.background = "#2E7D32"; // Green for active
+      btn.style.background = "#2E7D32";
       status.innerText = "Mode: Active Repetition";
     } else {
       btn.innerText = "Start Learning";
@@ -977,7 +979,6 @@
       let activeV = null;
       let activeP = null;
 
-      // 1. Identify current Verse and Pada
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
         if (currentTime >= pTimes[0] && currentTime < (verseTimings[parseInt(vNum)+1]?.[0] || 9999)) {
           activeV = vNum;
@@ -987,28 +988,56 @@
       }
 
       if (activeV && activeP !== null) {
-        // 2. If we just moved to a NEW pada, reset the local counter
         const padaId = `${activeV}-${activeP}`;
+        
+        // Update UI and reset pada counter if we naturally progressed to a new phrase
         if (currentActivePada !== padaId) {
-          currentRepCount = 0; 
           updateUI(activeV, activeP);
+          // Only reset pCount if it wasn't triggered by a seekTo loop
+          // (Handled by the logic below)
         }
 
-        // 3. LEARNING ENGINE: The Repeating Logic
         if (isLearningMode) {
-          const padaRepsAllowed = parseInt(document.getElementById('padaReps').value) || 1;
-          const currentPadaStart = verseTimings[activeV][activeP];
-          const nextStart = verseTimings[activeV][activeP + 1] || 
-                            (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
+          const pReps = parseInt(document.getElementById('padaReps').value) || 1;
+          const lReps = parseInt(document.getElementById('lineReps').value) || 1;
+          const vReps = parseInt(document.getElementById('verseReps').value) || 1;
 
-          // If we are at the end of the current phrase
-          if (currentTime >= (nextStart - 0.3)) {
-            // Only jump back if we haven't finished the requested reps
-            if (currentRepCount < (padaRepsAllowed - 1)) {
-              currentRepCount++;
+          const timings = verseTimings[activeV];
+          const currentPadaStart = timings[activeP];
+          // Determine where the current "Line" starts (P0 for Line 1, P2 for Line 2)
+          const currentLineStart = (activeP < 2) ? timings[0] : timings[2];
+          const currentVerseStart = timings[0];
+
+          const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
+
+          // If we reach the end of the current Pada
+          if (currentTime >= (nextBoundary - 0.3)) {
+            
+            // 1. PADA LOOP
+            if (pCount < (pReps - 1)) {
+              pCount++;
               player.seekTo(currentPadaStart, true);
             } 
-            // Else: Do nothing, let the player roll into the next pada naturally
+            // 2. LINE LOOP (Ends at Pada 1 or Pada 3)
+            else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
+              lCount++;
+              pCount = 0; // Reset pada gear for the next line pass
+              player.seekTo(currentLineStart, true);
+            }
+            // 3. VERSE LOOP (Ends at Pada 3)
+            else if (activeP === 3 && vCount < (vReps - 1)) {
+              vCount++;
+              lCount = 0; // Reset line gear
+              pCount = 0; // Reset pada gear
+              player.seekTo(currentVerseStart, true);
+            }
+            // 4. EXIT TO NEXT VERSE
+            else {
+              pCount = 0;
+              lCount = 0;
+              vCount = 0;
+              // Let it flow naturally to nextStart
+            }
           }
         }
       }
@@ -1021,11 +1050,12 @@
       document.querySelector(`.verse-container[data-verse="${vNum}"] .verse-grid`)?.classList.add('active');
       currentActiveVerse = vNum;
     }
-    if (currentActivePada !== `${vNum}-${pIdx}`) {
+    const padaId = `${vNum}-${pIdx}`;
+    if (currentActivePada !== padaId) {
       document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
       document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
               .forEach(p => p.classList.add('highlight-active'));
-      currentActivePada = `${vNum}-${pIdx}`;
+      currentActivePada = padaId;
     }
   }
 
@@ -1036,9 +1066,13 @@
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
       if (pada) {
-        const vNum = pada.closest('.verse-container').dataset.verse;
-        const pIdx = pada.dataset.index;
-        currentRepCount = 0; // Reset reps when manually jumping
+        // Reset all counters on manual selection
+        pCount = 0; lCount = 0; vCount = 0;
+        
+        const vContainer = pada.closest('.verse-container');
+        const vNum = vContainer.dataset.verse;
+        const pIdx = parseInt(pada.dataset.index);
+        
         player.seekTo(verseTimings[vNum][pIdx], true);
         player.playVideo();
       }
