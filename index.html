@@ -916,21 +916,17 @@
 
   function playVideo() {
     if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
-    else {
-      setVolume(document.getElementById('volumeSlider').value || 100);
-      setSpeed(document.getElementById('speedSelect').value || 1);
-      player.playVideo();
-    }
+    else player.playVideo();
   }
 
   function toggleLearning() {
     isLearningMode = !isLearningMode;
     pCount = 0; lCount = 0; vCount = 0;
     const btn = document.getElementById('learningToggle');
-    const status = document.getElementById('statusLabel');
     btn.innerText = isLearningMode ? "Stop Learning" : "Start Learning";
     btn.style.background = isLearningMode ? "#2E7D32" : "#990000";
-    status.innerText = isLearningMode ? "Mode: Active Repetition" : "Mode: Normal Play";
+    document.getElementById('statusLabel').innerText = isLearningMode ? "Mode: Active Repetition" : "Mode: Normal Play";
+    console.log("Learning Mode Reset.");
   }
 
   function onPlayerStateChange(event) {
@@ -953,7 +949,6 @@
       }
 
       if (activeV && activeP !== null) {
-        // UI Highlight Update
         if (currentActivePada !== `${activeV}-${activeP}`) {
           updateUI(activeV, activeP);
           currentActivePada = `${activeV}-${activeP}`;
@@ -963,60 +958,46 @@
           const pReps = parseInt(document.getElementById('padaReps').value) || 1;
           const lReps = parseInt(document.getElementById('lineReps').value) || 1;
           const vReps = parseInt(document.getElementById('verseReps').value) || 1;
-          const status = document.getElementById('statusLabel');
           const timings = verseTimings[activeV];
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          // Correct Status Labeling
-          if (pCount < (pReps - 1)) {
-            status.innerText = `Pada ${activeP + 1} - ${pCount + 1}/${pReps}`;
-          } else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
-            status.innerText = `Line ${(activeP === 1) ? 1 : 2} - ${lCount + 1}/${lReps}`;
-          } else if (activeP === 3 && vCount < (vReps - 1)) {
-            status.innerText = `Verse ${vCount + 1}/${vReps}`;
-          } else {
-            status.innerText = "Mode: Active Repetition";
-          }
-
-          // Execution Logic
-          if (!isLooping && currentTime >= (nextBoundary - 0.3)) {
+          // REPETITION LOGIC
+          if (!isLooping && currentTime >= (nextBoundary - 0.35)) {
             isLooping = true;
 
-            // 1. Pada Loop
+            // 1. PADA REPEAT
             if (pCount < (pReps - 1)) {
               pCount++;
-              console.log(`[LOOP] Pada ${activeP+1} (${pCount+1}/${pReps})`);
+              console.log(`[PADA] ${activeP+1} (${pCount+1}/${pReps})`);
               player.seekTo(timings[activeP], true);
             } 
-            // 2. Line Loop (At end of P1 or P3)
+            // 2. LINE REPEAT (Checks at Pada 1 or 3)
             else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
               lCount++;
-              pCount = 0; // Reset padas for the new line run
-              console.log(`[LOOP] Line ${(activeP===1)?1:2} (${lCount+1}/${lReps})`);
+              pCount = 0; // RESET PADA COUNTER FOR THE REPEATED LINE
+              console.log(`[LINE] ${(activeP===1)?1:2} (${lCount+1}/${lReps})`);
               player.seekTo((activeP === 1) ? timings[0] : timings[2], true);
             }
-            // 3. Verse Loop (At end of P3)
+            // 3. VERSE REPEAT (Checks at Pada 3)
             else if (activeP === 3 && vCount < (vReps - 1)) {
               vCount++;
-              pCount = 0; 
-              lCount = 0; // Reset everything for the new verse run
-              console.log(`[LOOP] Verse (${vCount+1}/${vReps})`);
+              pCount = 0; lCount = 0; // RESET EVERYTHING
+              console.log(`[VERSE] (${vCount+1}/${vReps})`);
               player.seekTo(timings[0], true);
             }
-            // 4. Move On
+            // 4. CLEAN EXIT TO NEXT PADA
             else {
+              console.log(`[EXIT] Section Finished.`);
               pCount = 0;
               if (activeP === 1) lCount = 0;
               if (activeP === 3) { lCount = 0; vCount = 0; }
-              console.log(`[FLOW] Progressing...`);
             }
 
-            // Lock logic for 800ms to allow audio to move past the boundary
-            setTimeout(() => { isLooping = false; }, 800); 
+            setTimeout(() => { isLooping = false; }, 1000); 
           }
         }
       }
-    }, 50);
+    }, 60);
   }
 
   function updateUI(vNum, pIdx) {
