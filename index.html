@@ -1057,20 +1057,31 @@
               }
             }
             else if (currentStage === 2) {
-              if (activeP === 3) {
-                if (vCount < (vReps - 1)) {
-                  vCount++; jumpTarget = timings[0];
-                } else {
-                  currentStage = 0; pCount = 0; lCount = 0; vCount = 0;
-                  const nextVerseStart = verseTimings[activeV + 1]?.[0];
-                  if (nextVerseStart !== undefined) {
-                    jumpTarget = nextVerseStart;
-                  } else {
-                    player.pauseVideo();
-                  }
-                }
-              }
-            }
+  if (activeP === 3) { // If we are at the end of the last pada
+    if (vCount < (vReps - 1)) {
+      // Still have verse reps to do
+      vCount++; 
+      jumpTarget = timings[0];
+    } else {
+      // ALL REPS DONE - Move to next verse immediately
+      const nextVNum = activeV + 1;
+      const nextVerseStart = verseTimings[nextVNum]?.[0];
+
+      if (nextVerseStart !== undefined) {
+        // Reset everything for a fresh start on the next verse
+        currentStage = 0; 
+        pCount = 0; 
+        lCount = 0; 
+        vCount = 0;
+        jumpTarget = nextVerseStart;
+      } else {
+        // No more verses in the list
+        player.pauseVideo();
+        status.innerText = "Chanting Complete";
+      }
+    }
+  }
+}
 
             if (jumpTarget !== -1) {
               isJumping = true;
