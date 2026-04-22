@@ -977,7 +977,7 @@
       let activeV = null;
       let activeP = null;
 
-      // Find current Verse and Pada
+      // 1. Identify current Verse and Pada
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
         if (currentTime >= pTimes[0] && currentTime < (verseTimings[parseInt(vNum)+1]?.[0] || 9999)) {
           activeV = vNum;
@@ -987,20 +987,28 @@
       }
 
       if (activeV && activeP !== null) {
-        updateUI(activeV, activeP);
+        // 2. If we just moved to a NEW pada, reset the local counter
+        const padaId = `${activeV}-${activeP}`;
+        if (currentActivePada !== padaId) {
+          currentRepCount = 0; 
+          updateUI(activeV, activeP);
+        }
 
-        // Learning Mode Logic: Loop the current Pada
+        // 3. LEARNING ENGINE: The Repeating Logic
         if (isLearningMode) {
           const padaRepsAllowed = parseInt(document.getElementById('padaReps').value) || 1;
-          const nextStart = verseTimings[activeV][activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
+          const currentPadaStart = verseTimings[activeV][activeP];
+          const nextStart = verseTimings[activeV][activeP + 1] || 
+                            (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          if (currentTime >= (nextStart - 0.2)) {
-            currentRepCount++;
-            if (currentRepCount < padaRepsAllowed) {
-              player.seekTo(verseTimings[activeV][activeP], true);
-            } else {
-              currentRepCount = 0; // Reset and allow move to next pada
-            }
+          // If we are at the end of the current phrase
+          if (currentTime >= (nextStart - 0.3)) {
+            // Only jump back if we haven't finished the requested reps
+            if (currentRepCount < (padaRepsAllowed - 1)) {
+              currentRepCount++;
+              player.seekTo(currentPadaStart, true);
+            } 
+            // Else: Do nothing, let the player roll into the next pada naturally
           }
         }
       }
