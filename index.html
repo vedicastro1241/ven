@@ -887,8 +887,10 @@
   var currentActiveVerse = null, currentActivePada = null;
   var isLearningMode = false;
   var pCount = 0, lCount = 0, vCount = 0;
-  var isLooping = false; 
-  var lastTriggeredBoundary = -1; // New tracker to prevent double-firing at the same timestamp
+  
+  // STATE CONTROL
+  var isTransitioning = false; 
+  var lastTargetTime = -1;
 
   const videoId = '0sDTj36XhOs'; 
   const verseTimings = { 
@@ -912,15 +914,10 @@
     });
   }
 
-  function playVideo() {
-    if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
-    else player.playVideo();
-  }
-
   function toggleLearning() {
     isLearningMode = !isLearningMode;
     pCount = 0; lCount = 0; vCount = 0;
-    lastTriggeredBoundary = -1;
+    isTransitioning = false;
     document.getElementById('learningToggle').innerText = isLearningMode ? "Stop Learning" : "Start Learning";
     document.getElementById('statusLabel').innerText = isLearningMode ? "Mode: Active Repetition" : "Mode: Normal Play";
   }
@@ -934,8 +931,17 @@
     if (highlightTimer) clearInterval(highlightTimer);
     highlightTimer = setInterval(() => {
       const currentTime = player.getCurrentTime();
-      let activeV = null, activeP = null;
+      
+      // BLOCK 1: If we are in a jump, wait until the player actually reaches the destination
+      if (isTransitioning) {
+        if (Math.abs(currentTime - lastTargetTime) < 1.0) {
+            isTransitioning = false; // Successfully arrived, resume logic
+            console.log("--- ARRIVED AT TARGET ---");
+        }
+        return; 
+      }
 
+      let activeV = null, activeP = null;
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
         if (currentTime >= pTimes[0] && currentTime < (verseTimings[parseInt(vNum)+1]?.[0] || 9999)) {
           activeV = vNum;
@@ -945,12 +951,9 @@
       }
 
       if (activeV && activeP !== null) {
-        const padaId = `${activeV}-${activeP}`;
-        if (currentActivePada !== padaId) {
+        if (currentActivePada !== `${activeV}-${activeP}`) {
           updateUI(activeV, activeP);
-          currentActivePada = padaId;
-          // When we enter a brand new Pada naturally, reset the pCount
-          if (!isLooping) pCount = 0; 
+          currentActivePada = `${activeV}-${activeP}`;
         }
 
         if (isLearningMode) {
@@ -960,45 +963,38 @@
           const timings = verseTimings[activeV];
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          // TRIGGER LOGIC with "Boundary Locking"
-          if (!isLooping && currentTime >= (nextBoundary - 0.35) && lastTriggeredBoundary !== nextBoundary) {
-            isLooping = true;
-            lastTriggeredBoundary = nextBoundary; 
+          // LOGIC TRIGGER
+          if (currentTime >= (nextBoundary - 0.4)) {
+            isTransitioning = true; // Lock the script
 
-            // 1. PADA REPEAT
             if (pCount < (pReps - 1)) {
               pCount++;
-              console.log(`[PADA] ${activeP+1} (${pCount+1}/${pReps})`);
-              player.seekTo(timings[activeP], true);
+              lastTargetTime = timings[activeP];
+              console.log(`[REPEATING PADA] ${activeP+1} (${pCount+1}/${pReps})`);
+              player.seekTo(lastTargetTime, true);
             } 
-            // 2. LINE REPEAT
             else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
               lCount++;
               pCount = 0; 
-              console.log(`[LINE] ${(activeP===1)?1:2} (${lCount+1}/${lReps})`);
-              player.seekTo((activeP === 1) ? timings[0] : timings[2], true);
+              lastTargetTime = (activeP === 1) ? timings[0] : timings[2];
+              console.log(`[REPEATING LINE] ${(activeP===1)?1:2} (${lCount+1}/${lReps})`);
+              player.seekTo(lastTargetTime, true);
             }
-            // 3. VERSE REPEAT
             else if (activeP === 3 && vCount < (vReps - 1)) {
               vCount++;
               pCount = 0; lCount = 0;
-              console.log(`[VERSE] (${vCount+1}/${vReps})`);
-              player.seekTo(timings[0], true);
+              lastTargetTime = timings[0];
+              console.log(`[REPEATING VERSE] (${vCount+1}/${vReps})`);
+              player.seekTo(lastTargetTime, true);
             }
-            // 4. NEXT
             else {
-              console.log(`[FLOW] Next Section`);
+              // Reset all for the next natural section
               pCount = 0;
               if (activeP === 1) lCount = 0;
               if (activeP === 3) { lCount = 0; vCount = 0; }
+              isTransitioning = false; // Don't lock, just let it flow
+              console.log("[FLOWING] Moving to next section...");
             }
-
-            setTimeout(() => { isLooping = false; }, 1200); 
-          }
-          
-          // Clear the boundary lock once we've moved significantly away from the end
-          if (currentTime < (nextBoundary - 1.0)) {
-            lastTriggeredBoundary = -1;
           }
         }
       }
@@ -1017,6 +1013,20 @@
   }
 
   function stopHighlighting() { clearInterval(highlightTimer); }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', (e) => {
+      const pada = e.target.closest('.pada');
+      if (pada) {
+        pCount = 0; lCount = 0; vCount = 0;
+        isTransitioning = false;
+        const vNum = pada.closest('.verse-container').dataset.verse;
+        const pIdx = parseInt(pada.dataset.index);
+        player.seekTo(verseTimings[vNum][pIdx], true);
+        player.playVideo();
+      }
+    });
+  });
 </script>
 
 </body>
