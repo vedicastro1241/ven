@@ -990,53 +990,57 @@
       if (activeV && activeP !== null) {
         const padaId = `${activeV}-${activeP}`;
         
-        // Update UI and reset pada counter if we naturally progressed to a new phrase
         if (currentActivePada !== padaId) {
           updateUI(activeV, activeP);
-          // Only reset pCount if it wasn't triggered by a seekTo loop
-          // (Handled by the logic below)
         }
 
         if (isLearningMode) {
           const pReps = parseInt(document.getElementById('padaReps').value) || 1;
           const lReps = parseInt(document.getElementById('lineReps').value) || 1;
           const vReps = parseInt(document.getElementById('verseReps').value) || 1;
+          const status = document.getElementById('statusLabel');
 
           const timings = verseTimings[activeV];
           const currentPadaStart = timings[activeP];
-          // Determine where the current "Line" starts (P0 for Line 1, P2 for Line 2)
           const currentLineStart = (activeP < 2) ? timings[0] : timings[2];
           const currentVerseStart = timings[0];
-
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          // If we reach the end of the current Pada
+          // Update Progress UI
+          if (pCount < (pReps - 1)) {
+            status.innerText = `Repeating Pada: ${pCount + 1}/${pReps}`;
+          } else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
+            status.innerText = `Repeating Line: ${lCount + 1}/${lReps}`;
+          } else if (activeP === 3 && vCount < (vReps - 1)) {
+            status.innerText = `Repeating Verse: ${vCount + 1}/${vReps}`;
+          } else {
+            status.innerText = "Mode: Active Repetition";
+          }
+
+          // Loop Trigger (0.3s before end)
           if (currentTime >= (nextBoundary - 0.3)) {
             
-            // 1. PADA LOOP
+            // 1. PADA LOOP (Highest Priority)
             if (pCount < (pReps - 1)) {
               pCount++;
               player.seekTo(currentPadaStart, true);
             } 
-            // 2. LINE LOOP (Ends at Pada 1 or Pada 3)
+            // 2. LINE LOOP (Mid Priority - triggers at end of P1 or P3)
             else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
               lCount++;
-              pCount = 0; // Reset pada gear for the next line pass
+              pCount = 0; // Reset pCount for next line repetition
               player.seekTo(currentLineStart, true);
             }
-            // 3. VERSE LOOP (Ends at Pada 3)
+            // 3. VERSE LOOP (Low Priority - triggers at end of P3)
             else if (activeP === 3 && vCount < (vReps - 1)) {
               vCount++;
               lCount = 0; // Reset line gear
               pCount = 0; // Reset pada gear
               player.seekTo(currentVerseStart, true);
             }
-            // 4. EXIT TO NEXT VERSE
-            else {
-              pCount = 0;
-              lCount = 0;
-              vCount = 0;
-              // Let it flow naturally to nextStart
+            // 4. RESET & PROCEED
+            else if (activeP === 3) {
+              pCount = 0; lCount = 0; vCount = 0;
             }
           }
         }
@@ -1066,13 +1070,10 @@
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
       if (pada) {
-        // Reset all counters on manual selection
         pCount = 0; lCount = 0; vCount = 0;
-        
         const vContainer = pada.closest('.verse-container');
         const vNum = vContainer.dataset.verse;
         const pIdx = parseInt(pada.dataset.index);
-        
         player.seekTo(verseTimings[vNum][pIdx], true);
         player.playVideo();
       }
