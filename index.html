@@ -878,25 +878,17 @@
     </div>
   </div>
 <script>
-  // 1. Load YouTube API
   var tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   var firstScriptTag = document.getElementsByTagName('script')[0];
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-  var player;
-  var highlightTimer;
-  var currentActiveVerse = null;
-  var currentActivePada = null;
-  
-  // Learning State & Global Nested Counters
+  var player, highlightTimer;
+  var currentActiveVerse = null, currentActivePada = null;
   var isLearningMode = false;
-  var pCount = 0; // Pada counter
-  var lCount = 0; // Line counter
-  var vCount = 0; // Verse counter
+  var pCount = 0, lCount = 0, vCount = 0;
 
   const videoId = '0sDTj36XhOs'; 
-
   const verseTimings = { 
     1: [0, 4, 8, 12], 2: [18, 23, 28, 34], 3: [41, 50, 60, 70], 
     4: [81, 84, 88, 92], 5: [96, 100, 105, 110], 6: [115, 122, 129, 136],
@@ -924,7 +916,11 @@
   function playVideo() {
     const btn = document.getElementById('playBtn');
     if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
-    else player.playVideo();
+    else {
+      setVolume(document.getElementById('volumeSlider').value);
+      setSpeed(document.getElementById('speedSelect').value);
+      player.playVideo();
+    }
   }
 
   function toggleLearning() {
@@ -932,17 +928,16 @@
     pCount = 0; lCount = 0; vCount = 0;
     const btn = document.getElementById('learningToggle');
     const status = document.getElementById('statusLabel');
-    if (isLearningMode) {
-      btn.innerText = "Stop Learning";
-      btn.style.background = "#2E7D32";
-      status.innerText = "Mode: Active Repetition";
-      console.log("Learning Mode Enabled. Gears Reset.");
-    } else {
-      btn.innerText = "Start Learning";
-      btn.style.background = "#990000";
-      status.innerText = "Mode: Normal Play";
-      console.log("Learning Mode Disabled.");
-    }
+    btn.innerText = isLearningMode ? "Stop Learning" : "Start Learning";
+    btn.style.background = isLearningMode ? "#2E7D32" : "#990000";
+    status.innerText = isLearningMode ? "Mode: Active Repetition" : "Mode: Normal Play";
+    console.log("Learning Mode Toggled:", isLearningMode);
+  }
+
+  function toggleFullScreen() {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) { elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.(); }
+    else { document.exitFullscreen?.(); }
   }
 
   function onPlayerStateChange(event) {
@@ -966,7 +961,12 @@
       }
 
       if (activeV && activeP !== null) {
-        updateUI(activeV, activeP);
+        const padaId = `${activeV}-${activeP}`;
+        if (currentActivePada !== padaId) {
+          updateUI(activeV, activeP);
+          // If we naturally progress to a NEW pada, reset the P-counter
+          if (!isLooping) pCount = 0; 
+        }
 
         if (isLearningMode) {
           const pReps = parseInt(document.getElementById('padaReps').value) || 1;
@@ -975,59 +975,62 @@
           const status = document.getElementById('statusLabel');
 
           const timings = verseTimings[activeV];
-          const currentPadaStart = timings[activeP];
-          const currentLineStart = (activeP < 2) ? timings[0] : timings[2];
-          const currentVerseStart = timings[0];
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
           // Update Status Text
           if (pCount < (pReps - 1)) {
             status.innerText = `Pada ${activeP + 1} - ${pCount + 1}/${pReps}`;
           } else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
-            const lineNum = (activeP === 1) ? 1 : 2;
-            status.innerText = `Line ${lineNum} - ${lCount + 1}/${lReps}`;
+            status.innerText = `Line ${(activeP === 1) ? 1 : 2} - ${lCount + 1}/${lReps}`;
           } else if (activeP === 3 && vCount < (vReps - 1)) {
             status.innerText = `Verse ${vCount + 1}/${vReps}`;
           } else {
             status.innerText = "Mode: Active Repetition";
           }
 
-          // Repetition Trigger Logic
+          // Trigger Logic
           if (currentTime >= (nextBoundary - 0.3)) {
-            
-            // 1. PADA REPEAT
-            if (pCount < (pReps - 1)) {
-              pCount++;
-              console.log(`[PADA REPEAT] Pada ${activeP + 1}: Play ${pCount + 1} of ${pReps}`);
-              player.seekTo(currentPadaStart, true);
-            } 
-            // 2. LINE REPEAT (Ends at P1 or P3)
-            else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
-              lCount++;
-              pCount = 0; // Reset padas for next line repetition
-              const lineNum = (activeP === 1) ? 1 : 2;
-              console.log(`[LINE REPEAT] Line ${lineNum}: Play ${lCount + 1} of ${lReps}`);
-              player.seekTo(currentLineStart, true);
-            }
-            // 3. VERSE REPEAT (Ends at P3)
-            else if (activeP === 3 && vCount < (vReps - 1)) {
-              vCount++;
-              lCount = 0; pCount = 0; 
-              console.log(`[VERSE REPEAT] Verse: Play ${vCount + 1} of ${vReps}`);
-              player.seekTo(currentVerseStart, true);
-            }
-            // 4. CLEAN RESET
-            else if (activeP === 3) {
-              console.log(`[COMPLETED] Verse Repetitions Finished. Moving to next.`);
-              pCount = 0; lCount = 0; vCount = 0;
-            } else {
-              // Transition from P0 to P1 or P2 to P3
-              pCount = 0; 
-            }
+            handleRepetition(activeP, timings, pReps, lReps, vReps);
           }
         }
       }
     }, 100);
+  }
+
+  var isLooping = false; // Flag to prevent multi-triggering in one frame
+  function handleRepetition(activeP, timings, pReps, lReps, vReps) {
+    if (isLooping) return;
+    isLooping = true;
+
+    // 1. PADA
+    if (pCount < (pReps - 1)) {
+      pCount++;
+      console.log(`[PADA] ${activeP+1} Rep:${pCount+1}/${pReps}`);
+      player.seekTo(timings[activeP], true);
+    } 
+    // 2. LINE (At end of P1 or P3)
+    else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
+      lCount++;
+      pCount = 0; 
+      console.log(`[LINE] ${(activeP===1)?1:2} Rep:${lCount+1}/${lReps}`);
+      player.seekTo((activeP === 1) ? timings[0] : timings[2], true);
+    }
+    // 3. VERSE (At end of P3)
+    else if (activeP === 3 && vCount < (vReps - 1)) {
+      vCount++;
+      lCount = 0; pCount = 0;
+      console.log(`[VERSE] Rep:${vCount+1}/${vReps}`);
+      player.seekTo(timings[0], true);
+    }
+    // 4. EXIT
+    else {
+      pCount = 0;
+      if (activeP === 1) lCount = 0;
+      if (activeP === 3) { lCount = 0; vCount = 0; }
+      console.log(`[FLOW] Moving to next section.`);
+    }
+
+    setTimeout(() => { isLooping = false; }, 1000); // Wait 1s before allowing next loop trigger
   }
 
   function updateUI(vNum, pIdx) {
@@ -1051,7 +1054,6 @@
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
       if (pada) {
-        console.log("Manual Jump. Resetting Gears.");
         pCount = 0; lCount = 0; vCount = 0;
         const vNum = pada.closest('.verse-container').dataset.verse;
         const pIdx = parseInt(pada.dataset.index);
