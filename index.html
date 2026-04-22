@@ -887,6 +887,7 @@
   var currentActiveVerse = null, currentActivePada = null;
   var isLearningMode = false;
   var pCount = 0, lCount = 0, vCount = 0;
+  var isLooping = false; 
 
   const videoId = '0sDTj36XhOs'; 
   const verseTimings = { 
@@ -914,7 +915,6 @@
   function setSpeed(val) { if (player?.setPlaybackRate) player.setPlaybackRate(parseFloat(val)); }
 
   function playVideo() {
-    const btn = document.getElementById('playBtn');
     if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
     else {
       setVolume(document.getElementById('volumeSlider').value);
@@ -931,19 +931,11 @@
     btn.innerText = isLearningMode ? "Stop Learning" : "Start Learning";
     btn.style.background = isLearningMode ? "#2E7D32" : "#990000";
     status.innerText = isLearningMode ? "Mode: Active Repetition" : "Mode: Normal Play";
-    console.log("Learning Mode Toggled:", isLearningMode);
-  }
-
-  function toggleFullScreen() {
-    const elem = document.documentElement;
-    if (!document.fullscreenElement) { elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.(); }
-    else { document.exitFullscreen?.(); }
   }
 
   function onPlayerStateChange(event) {
-    const btn = document.getElementById('playBtn');
-    if (event.data == YT.PlayerState.PLAYING) { btn.innerText = "Pause Audio"; startHighlighting(); }
-    else { btn.innerText = "Play Audio"; stopHighlighting(); }
+    if (event.data == YT.PlayerState.PLAYING) startHighlighting();
+    else stopHighlighting();
   }
 
   function startHighlighting() {
@@ -961,11 +953,9 @@
       }
 
       if (activeV && activeP !== null) {
-        const padaId = `${activeV}-${activeP}`;
-        if (currentActivePada !== padaId) {
+        if (currentActivePada !== `${activeV}-${activeP}`) {
           updateUI(activeV, activeP);
-          // If we naturally progress to a NEW pada, reset the P-counter
-          if (!isLooping) pCount = 0; 
+          currentActivePada = `${activeV}-${activeP}`;
         }
 
         if (isLearningMode) {
@@ -973,11 +963,10 @@
           const lReps = parseInt(document.getElementById('lineReps').value) || 1;
           const vReps = parseInt(document.getElementById('verseReps').value) || 1;
           const status = document.getElementById('statusLabel');
-
           const timings = verseTimings[activeV];
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          // Update Status Text
+          // STATUS DISPLAY
           if (pCount < (pReps - 1)) {
             status.innerText = `Pada ${activeP + 1} - ${pCount + 1}/${pReps}`;
           } else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
@@ -988,49 +977,43 @@
             status.innerText = "Mode: Active Repetition";
           }
 
-          // Trigger Logic
-          if (currentTime >= (nextBoundary - 0.3)) {
-            handleRepetition(activeP, timings, pReps, lReps, vReps);
+          // REPETITION LOGIC
+          if (!isLooping && currentTime >= (nextBoundary - 0.35)) {
+            isLooping = true;
+
+            // 1. PADA LOOP
+            if (pCount < (pReps - 1)) {
+              pCount++;
+              console.log(`[PADA] ${activeP+1} Rep:${pCount+1}/${pReps}`);
+              player.seekTo(timings[activeP], true);
+            } 
+            // 2. LINE LOOP (P1/P3 end)
+            else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
+              lCount++;
+              pCount = 0; // CRITICAL RESET
+              console.log(`[LINE] ${(activeP===1)?1:2} Rep:${lCount+1}/${lReps}`);
+              player.seekTo((activeP === 1) ? timings[0] : timings[2], true);
+            }
+            // 3. VERSE LOOP (P3 end)
+            else if (activeP === 3 && vCount < (vReps - 1)) {
+              vCount++;
+              pCount = 0; lCount = 0; // CRITICAL RESET
+              console.log(`[VERSE] Rep:${vCount+1}/${vReps}`);
+              player.seekTo(timings[0], true);
+            }
+            // 4. NEXT SECTION
+            else {
+              pCount = 0;
+              if (activeP === 1) lCount = 0;
+              if (activeP === 3) { lCount = 0; vCount = 0; }
+              console.log(`[FLOW] Next segment.`);
+            }
+
+            setTimeout(() => { isLooping = false; }, 800); 
           }
         }
       }
-    }, 100);
-  }
-
-  var isLooping = false; // Flag to prevent multi-triggering in one frame
-  function handleRepetition(activeP, timings, pReps, lReps, vReps) {
-    if (isLooping) return;
-    isLooping = true;
-
-    // 1. PADA
-    if (pCount < (pReps - 1)) {
-      pCount++;
-      console.log(`[PADA] ${activeP+1} Rep:${pCount+1}/${pReps}`);
-      player.seekTo(timings[activeP], true);
-    } 
-    // 2. LINE (At end of P1 or P3)
-    else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
-      lCount++;
-      pCount = 0; 
-      console.log(`[LINE] ${(activeP===1)?1:2} Rep:${lCount+1}/${lReps}`);
-      player.seekTo((activeP === 1) ? timings[0] : timings[2], true);
-    }
-    // 3. VERSE (At end of P3)
-    else if (activeP === 3 && vCount < (vReps - 1)) {
-      vCount++;
-      lCount = 0; pCount = 0;
-      console.log(`[VERSE] Rep:${vCount+1}/${vReps}`);
-      player.seekTo(timings[0], true);
-    }
-    // 4. EXIT
-    else {
-      pCount = 0;
-      if (activeP === 1) lCount = 0;
-      if (activeP === 3) { lCount = 0; vCount = 0; }
-      console.log(`[FLOW] Moving to next section.`);
-    }
-
-    setTimeout(() => { isLooping = false; }, 1000); // Wait 1s before allowing next loop trigger
+    }, 50); // Faster polling for precision
   }
 
   function updateUI(vNum, pIdx) {
@@ -1039,13 +1022,9 @@
       document.querySelector(`.verse-container[data-verse="${vNum}"] .verse-grid`)?.classList.add('active');
       currentActiveVerse = vNum;
     }
-    const padaId = `${vNum}-${pIdx}`;
-    if (currentActivePada !== padaId) {
-      document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
-      document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
-              .forEach(p => p.classList.add('highlight-active'));
-      currentActivePada = padaId;
-    }
+    document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
+    document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
+            .forEach(p => p.classList.add('highlight-active'));
   }
 
   function stopHighlighting() { clearInterval(highlightTimer); }
