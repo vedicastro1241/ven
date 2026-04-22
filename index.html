@@ -81,7 +81,33 @@
   .highlight-active { background-color: #fffde7; color: #d32f2f !important; font-weight: bold; transform: scale(1.02); }
 
   #statusLabel { font-size: 12px; color: #990000; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+/* Add this to your .player-header */
+.player-header {
+    position: sticky; 
+    top: 0; 
+    background: #FDFCF9; 
+    padding: 20px 0; 
+    z-index: 1000;
+    border-bottom: 2px solid #BC6C25; 
+    margin-bottom: 30px;
+}
 
+/* Add this to your .verse-container */
+.verse-container { 
+    margin-bottom: 40px; 
+    padding: 10px; 
+    border-radius: 8px; 
+    /* THIS IS THE KEY: It leaves room for the sticky header */
+    scroll-margin-top: 180px; 
+}
+
+/* Fix for Fullscreen scrolling */
+:fullscreen .main-wrapper { 
+    background-color: #FDFCF9; 
+    padding: 20px; 
+    /* Remove height: 100vh if scrolling is breaking */
+    min-height: 100vh; 
+}
   @media (max-width: 600px) {
     .verse-grid { flex-direction: column; gap: 15px; }
     .sanskrit, .roman { text-align: center; }
@@ -895,37 +921,17 @@
 
   const videoId = '0sDTj36XhOs'; 
   const verseTimings = {
-  1: [4, 7, 11, 14],
-  2: [18, 20.7, 23.7, 26.3],
-  3: [41.5, 46, 51, 56],
-  4: [81.4, 85, 88.6, 92.5],
-  5: [96.4, 101.1, 105, 109.2],
-  6: [114.8, 119.5, 124, 128.5],
-  7: [134, 137.1, 141.2, 145.6],
-  8: [150.7, 155, 159.6, 163.7],
-  9: [168.9, 173.5, 177.7, 182],
-  10: [187.3, 190.5, 194.5, 199],
-  11: [204.2, 208.4, 212.7, 217.2],
-  12: [222.5, 226.7, 231.2, 235.4],
-  13: [240.5, 244.6, 249, 253.8],
-  14: [277.4, 282.5, 287.5, 292.7],
-  15: [297.8, 301, 305.3, 310],
-  16: [315, 318.5, 322.7, 327.6],
-  17: [332.6, 335.9, 339.9, 344.4],
-  18: [349.3, 353.2, 357.5, 361.8],
-  19: [366.7, 371.5, 376, 380.5],
-  20: [385.3, 389.8, 394.2, 398.7],
-  21: [403.7, 408.2, 412.8, 417.4],
-  22: [422.4, 427, 431.5, 435.7],
-  23: [440.6, 445.1, 449.9, 454.6],
-  24: [459.5, 463.6, 468, 472.4],
-  25: [477.3, 481.5, 485.6, 490.2],
-  26: [495, 499.5, 504.2, 509.3],
-  27: [514.7, 518.8, 523.5, 528.1],
-  28: [533.1, 537.2, 541.4, 546.2],
-  29: [568.5, 572.8, 577.4, 582.6]
-};
-
+    1: [4, 7, 11, 14], 2: [18, 20.7, 23.7, 26.3], 3: [41.5, 46, 51, 56],
+    4: [81.4, 85, 88.6, 92.5], 5: [96.4, 101.1, 105, 109.2], 6: [114.8, 119.5, 124, 128.5],
+    7: [134, 137.1, 141.2, 145.6], 8: [150.7, 155, 159.6, 163.7], 9: [168.9, 173.5, 177.7, 182],
+    10: [187.3, 190.5, 194.5, 199], 11: [204.2, 208.4, 212.7, 217.2], 12: [222.5, 226.7, 231.2, 235.4],
+    13: [240.5, 244.6, 249, 253.8], 14: [277.4, 282.5, 287.5, 292.7], 15: [297.8, 301, 305.3, 310],
+    16: [315, 318.5, 322.7, 327.6], 17: [332.6, 335.9, 339.9, 344.4], 18: [349.3, 353.2, 357.5, 361.8],
+    19: [366.7, 371.5, 376, 380.5], 20: [385.3, 389.8, 394.2, 398.7], 21: [403.7, 408.2, 412.8, 417.4],
+    22: [422.4, 427, 431.5, 435.7], 23: [440.6, 445.1, 449.9, 454.6], 24: [459.5, 463.6, 468, 472.4],
+    25: [477.3, 481.5, 485.6, 490.2], 26: [495, 499.5, 504.2, 509.3], 27: [514.7, 518.8, 523.5, 528.1],
+    28: [533.1, 537.2, 541.4, 546.2], 29: [568.5, 572.8, 577.4, 582.6]
+  };
 
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
@@ -999,35 +1005,24 @@
                 currentStage = 1; lCount = 0; jumpTarget = timings[0];
               }
             } 
-           else if (currentStage === 1) {
-              // --- END OF LINE 1 (PADA 2) ---
+            else if (currentStage === 1) {
               if (activeP === 1) { 
                 if (lCount < (lReps - 1)) {
-                  lCount++;
-                  jumpTarget = timings[0]; // Repeat Line 1
+                  lCount++; jumpTarget = timings[0];
                 } else {
-                  // LINE 1 FINISHED
                   lCount = 0; 
                   status.innerText = `Line 2: 1/${lReps}`;
-                  
-                  // THE PUSH: Move the playhead slightly past the boundary 
-                  // to prevent the 100ms loop from re-triggering this block.
                   isJumping = true;
                   player.seekTo(nextBoundary + 0.1, true); 
                   setTimeout(() => { isJumping = false; }, 1000);
-                  return; // Exit the interval early
+                  return; 
                 }
               } 
-              // --- END OF LINE 2 (PADA 4) ---
               else if (activeP === 3) {
                 if (lCount < (lReps - 1)) {
-                  lCount++;
-                  jumpTarget = timings[2]; // Repeat Line 2
+                  lCount++; jumpTarget = timings[2];
                 } else {
-                  // BOTH LINES FINISHED
-                  currentStage = 2;
-                  vCount = 0;
-                  jumpTarget = timings[0]; // Start Full Verse
+                  currentStage = 2; vCount = 0; jumpTarget = timings[0];
                 }
               }
             }
@@ -1036,15 +1031,12 @@
                 if (vCount < (vReps - 1)) {
                   vCount++; jumpTarget = timings[0];
                 } else {
-                  // VERSE COMPLETE - Move to next Verse
                   currentStage = 0; pCount = 0; lCount = 0; vCount = 0;
                   const nextVerseStart = verseTimings[activeV + 1]?.[0];
                   if (nextVerseStart !== undefined) {
                     jumpTarget = nextVerseStart;
-                    console.log("Verse " + activeV + " complete. Jumping to Verse " + (activeV + 1));
                   } else {
                     player.pauseVideo();
-                    console.log("All Verses complete.");
                   }
                 }
               }
@@ -1062,9 +1054,19 @@
   }
 
   function updateUI(vNum, pIdx) {
+    // Highlighting
     document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
     document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
             .forEach(p => p.classList.add('highlight-active'));
+
+    // Auto-Scroll Logic
+    if (currentActiveVerse !== vNum) {
+      const verseElement = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
+      if (verseElement) {
+        verseElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      currentActiveVerse = vNum;
+    }
   }
   function stopHighlighting() { clearInterval(highlightTimer); }
 </script>
