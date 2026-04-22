@@ -931,6 +931,12 @@
   var currentStage = 0; // 0: Padas, 1: Lines, 2: Verse
 
   const videoId = '0sDTj36XhOs'; 
+
+  // Add any time ranges you want to skip ONLY during learning mode here
+  const skipIntervals = [
+    { start: 29.3, end: 41.5 } 
+  ];
+
   const verseTimings = {
     1: [4, 7, 11, 14], 2: [18, 20.7, 23.7, 26.3], 3: [41.5, 46, 51, 56],
     4: [81.4, 85, 88.6, 92.5], 5: [96.4, 101.1, 105, 109.2], 6: [114.8, 119.5, 124, 128.5],
@@ -977,6 +983,19 @@
       if (isJumping) return;
 
       const currentTime = player.getCurrentTime();
+
+      // --- EXCLUSION LOGIC ---
+      if (isLearningMode) {
+        for (let interval of skipIntervals) {
+          if (currentTime >= interval.start && currentTime < interval.end) {
+            isJumping = true;
+            player.seekTo(interval.end, true);
+            setTimeout(() => { isJumping = false; }, 1000);
+            return; 
+          }
+        }
+      }
+
       let activeV = null, activeP = null;
 
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
@@ -1065,12 +1084,10 @@
   }
 
   function updateUI(vNum, pIdx) {
-    // Highlighting
     document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
     document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
             .forEach(p => p.classList.add('highlight-active'));
 
-    // Auto-Scroll Logic
     if (currentActiveVerse !== vNum) {
       const verseElement = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
       if (verseElement) {
@@ -1079,30 +1096,27 @@
       currentActiveVerse = vNum;
     }
   }
-  function stopHighlighting() { clearInterval(highlightTimer); }
-  // Function to handle manual clicking on a line
-document.addEventListener('click', function (e) {
-  const pada = e.target.closest('.pada');
-  if (pada && player) {
-    const vNum = parseInt(pada.getAttribute('data-verse'));
-    const pIdx = parseInt(pada.getAttribute('data-index'));
 
-    if (verseTimings[vNum] && verseTimings[vNum][pIdx] !== undefined) {
-      const jumpTime = verseTimings[vNum][pIdx];
-      
-      // Reset logic states so the learning mode doesn't get confused
-      isJumping = true;
-      pCount = 0; lCount = 0; vCount = 0;
-      currentStage = 0; // Reset to Pada stage when manually jumping
-      
-      player.seekTo(jumpTime, true);
-      player.playVideo();
-      
-      // Briefly block the auto-logic to let the player settle
-      setTimeout(() => { isJumping = false; }, 1000);
+  function stopHighlighting() { clearInterval(highlightTimer); }
+
+  document.addEventListener('click', function (e) {
+    const pada = e.target.closest('.pada');
+    if (pada && player) {
+      const vContainer = pada.closest('.verse-container');
+      const vNum = parseInt(vContainer.getAttribute('data-verse'));
+      const pIdx = parseInt(pada.getAttribute('data-index'));
+
+      if (verseTimings[vNum] && verseTimings[vNum][pIdx] !== undefined) {
+        const jumpTime = verseTimings[vNum][pIdx];
+        isJumping = true;
+        pCount = 0; lCount = 0; vCount = 0;
+        currentStage = 0; 
+        player.seekTo(jumpTime, true);
+        player.playVideo();
+        setTimeout(() => { isJumping = false; }, 1000);
+      }
     }
-  }
-});
+  });
 </script>
 </body>
 </html>
