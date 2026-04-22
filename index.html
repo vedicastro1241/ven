@@ -888,10 +888,10 @@
   var highlightTimer;
   var currentActiveVerse = null;
   var currentActivePada = null;
+  var isLearningMode = false; // Toggle state
   const videoId = '0sDTj36XhOs'; 
 
-  // 2. GRANULAR TIMING DATA (Verse: [Pada0, Pada1, Pada2, Pada3])
-  // Note: Adjust these sub-seconds based on the actual audio rhythm.
+  // 2. GRANULAR TIMING DATA
   const verseTimings = { 
     1: [0, 4, 8, 12],     2: [18, 23, 28, 34],   3: [41, 50, 60, 70], 
     4: [81, 84, 88, 92],   5: [96, 100, 105, 110], 6: [115, 122, 129, 136],
@@ -913,7 +913,7 @@
     });
   }
 
-  // --- AUDIO CONTROLS ---
+  // --- CONTROLS ---
   function setVolume(val) { if (player?.setVolume) player.setVolume(val); }
   function setSpeed(val) { if (player?.setPlaybackRate) player.setPlaybackRate(parseFloat(val)); }
 
@@ -928,6 +928,18 @@
     }
   }
 
+  function toggleLearningMode() {
+    isLearningMode = !isLearningMode;
+    const btn = document.getElementById('startLearningBtn');
+    if (isLearningMode) {
+      btn.classList.add('learning-active');
+      btn.innerText = "Stop Learning (Looping ON)";
+    } else {
+      btn.classList.remove('learning-active');
+      btn.innerText = "Start Learning";
+    }
+  }
+
   function toggleFullScreen() {
     const elem = document.documentElement;
     if (!document.fullscreenElement) {
@@ -937,7 +949,7 @@
     }
   }
 
-  // --- HIGHLIGHTING LOGIC ---
+  // --- HIGHLIGHTING & LOOPING ---
   function onPlayerStateChange(event) {
     const btn = document.getElementById('playBtn');
     if (event.data == YT.PlayerState.PLAYING) {
@@ -956,14 +968,12 @@
       let activeVerseNum = null;
       let activePadaIdx = null;
 
-      // Find which verse and pada we are in
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
         const verseStart = pTimes[0];
         const nextVerseStart = verseTimings[parseInt(vNum) + 1]?.[0] || 9999;
 
         if (currentTime >= verseStart && currentTime < nextVerseStart) {
           activeVerseNum = vNum;
-          // Determine Pada index
           for (let i = 0; i < pTimes.length; i++) {
             if (currentTime >= pTimes[i]) activePadaIdx = i;
           }
@@ -971,14 +981,25 @@
         }
       }
 
-      if (activeVerseNum) {
+      if (activeVerseNum !== null && activePadaIdx !== null) {
         updateUI(activeVerseNum, activePadaIdx);
+
+        // LEARNING ENGINE: Loop current pada if enabled
+        if (isLearningMode) {
+          const currentPadaStart = verseTimings[activeVerseNum][activePadaIdx];
+          const nextSectionStart = verseTimings[activeVerseNum][activePadaIdx + 1] || 
+                                   (verseTimings[parseInt(activeVerseNum) + 1]?.[0] || 9999);
+          
+          // Jump back 0.3s before the next phrase starts
+          if (currentTime >= (nextSectionStart - 0.3)) {
+            player.seekTo(currentPadaStart, true);
+          }
+        }
       }
     }, 100);
   }
 
   function updateUI(vNum, pIdx) {
-    // 1. Handle Verse Change
     if (currentActiveVerse !== vNum) {
       document.querySelectorAll('.verse-grid').forEach(g => g.classList.remove('active'));
       const container = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
@@ -990,7 +1011,6 @@
       currentActiveVerse = vNum;
     }
 
-    // 2. Handle Pada Change
     if (currentActivePada !== `${vNum}-${pIdx}`) {
       document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-pada'));
       const activePadas = document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`);
@@ -1001,9 +1021,13 @@
 
   function stopHighlighting() { clearInterval(highlightTimer); }
 
-  // --- EVENT LISTENERS ---
+  // --- INITIALIZATION ---
   document.addEventListener('DOMContentLoaded', () => {
-    // Jump to Verse/Pada on click
+    // 1. Learning Button Listener
+    const learnBtn = document.getElementById('startLearningBtn');
+    if (learnBtn) learnBtn.addEventListener('click', toggleLearningMode);
+
+    // 2. Click a Pada to jump
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
       if (pada) {
