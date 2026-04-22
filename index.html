@@ -934,12 +934,9 @@
 
   function toggleLearning() {
     isLearningMode = !isLearningMode;
-    // Reset all gears when toggling
     pCount = 0; lCount = 0; vCount = 0;
-    
     const btn = document.getElementById('learningToggle');
     const status = document.getElementById('statusLabel');
-
     if (isLearningMode) {
       btn.innerText = "Stop Learning";
       btn.style.background = "#2E7D32";
@@ -989,7 +986,6 @@
 
       if (activeV && activeP !== null) {
         const padaId = `${activeV}-${activeP}`;
-        
         if (currentActivePada !== padaId) {
           updateUI(activeV, activeP);
         }
@@ -1006,39 +1002,38 @@
           const currentVerseStart = timings[0];
           const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
 
-          // Update Progress UI
+          // --- UPDATE STATUS UI ---
           if (pCount < (pReps - 1)) {
-            status.innerText = `Repeating Pada: ${pCount + 1}/${pReps}`;
+            status.innerText = `Pada ${activeP + 1} - ${pCount + 1}/${pReps}`;
           } else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
-            status.innerText = `Repeating Line: ${lCount + 1}/${lReps}`;
+            const lineNum = (activeP === 1) ? 1 : 2;
+            status.innerText = `Line ${lineNum} - ${lCount + 1}/${lReps}`;
           } else if (activeP === 3 && vCount < (vReps - 1)) {
-            status.innerText = `Repeating Verse: ${vCount + 1}/${vReps}`;
+            status.innerText = `Verse ${vCount + 1}/${vReps}`;
           } else {
             status.innerText = "Mode: Active Repetition";
           }
 
-          // Loop Trigger (0.3s before end)
+          // --- NESTED LOOP TRIGGER ---
           if (currentTime >= (nextBoundary - 0.3)) {
-            
-            // 1. PADA LOOP (Highest Priority)
+            // 1. PADA LOOP (Smallest Unit)
             if (pCount < (pReps - 1)) {
               pCount++;
               player.seekTo(currentPadaStart, true);
             } 
-            // 2. LINE LOOP (Mid Priority - triggers at end of P1 or P3)
+            // 2. LINE LOOP (Middle Unit - triggers at Pada 2 or Pada 4)
             else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
               lCount++;
-              pCount = 0; // Reset pCount for next line repetition
+              pCount = 0; // Reset padas for next line repetition
               player.seekTo(currentLineStart, true);
             }
-            // 3. VERSE LOOP (Low Priority - triggers at end of P3)
+            // 3. VERSE LOOP (Largest Unit - triggers at Pada 4)
             else if (activeP === 3 && vCount < (vReps - 1)) {
               vCount++;
-              lCount = 0; // Reset line gear
-              pCount = 0; // Reset pada gear
+              lCount = 0; pCount = 0; 
               player.seekTo(currentVerseStart, true);
             }
-            // 4. RESET & PROCEED
+            // 4. CLEAN RESET FOR NEXT VERSE
             else if (activeP === 3) {
               pCount = 0; lCount = 0; vCount = 0;
             }
@@ -1065,7 +1060,6 @@
 
   function stopHighlighting() { clearInterval(highlightTimer); }
 
-  // --- CLICKS ---
   document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
       const pada = e.target.closest('.pada');
