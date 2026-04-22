@@ -877,6 +877,8 @@
   </div>
     </div>
   </div>
+
+
 <script>
   var tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
@@ -886,25 +888,13 @@
   var player, highlightTimer;
   var currentActiveVerse = null, currentActivePada = null;
   var isLearningMode = false;
+  var isJumping = false; 
+
   var pCount = 0, lCount = 0, vCount = 0;
-  
-  // STATE CONTROL
-  var isTransitioning = false; 
-  var lastTargetTime = -1;
+  var currentStage = 0; // 0: Padas, 1: Lines, 2: Verse
 
   const videoId = '0sDTj36XhOs'; 
-  const verseTimings = { 
-    1: [0, 4, 8, 12], 2: [18, 23, 28, 34], 3: [41, 50, 60, 70], 
-    4: [81, 84, 88, 92], 5: [96, 100, 105, 110], 6: [115, 122, 129, 136],
-    7: [144, 145.5, 147, 148.5], 8: [151, 155, 159, 163], 9: [169, 173, 177, 181],
-    10: [191, 194, 197, 200], 11: [205, 209, 213, 217], 12: [223, 226, 230, 234],
-    13: [239, 248, 257, 266], 14: [277, 281, 286, 291], 15: [297, 301, 305, 309],
-    16: [315, 319, 323, 327], 17: [333, 337, 341, 345], 18: [350, 354, 358, 362],
-    19: [367, 371, 375, 379], 20: [385, 389, 393, 397], 21: [403, 407, 411, 415],
-    22: [422, 426, 430, 434], 23: [440, 444, 448, 452], 24: [459, 463, 467, 471],
-    25: [478, 482, 486, 490], 26: [495, 500, 505, 509], 27: [515, 519, 523, 527],
-    28: [533, 542, 551, 560], 29: [569, 573, 577, 581]
-  };
+  const verseTimings = { 1: [0, 4, 8, 12], 2: [18, 23, 28, 34], 3: [41, 50, 60, 70], 4: [81, 84, 88, 92], 5: [96, 100, 105, 110], 6: [115, 122, 129, 136], 7: [144, 145.5, 147, 148.5], 8: [151, 155, 159, 163], 9: [169, 173, 177, 181], 10: [191, 194, 197, 200], 11: [205, 209, 213, 217], 12: [223, 226, 230, 234], 13: [239, 248, 257, 266], 14: [277, 281, 286, 291], 15: [297, 301, 305, 309], 16: [315, 319, 323, 327], 17: [333, 337, 341, 345], 18: [350, 354, 358, 362], 19: [367, 371, 375, 379], 20: [385, 389, 393, 397], 21: [403, 407, 411, 415], 22: [422, 426, 430, 434], 23: [440, 444, 448, 452], 24: [459, 463, 467, 471], 25: [478, 482, 486, 490], 26: [495, 500, 505, 509], 27: [515, 519, 523, 527], 28: [533, 542, 551, 560], 29: [569, 573, 577, 581] };
 
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
@@ -914,12 +904,18 @@
     });
   }
 
+  function setVolume(val) { if (player?.setVolume) player.setVolume(val); }
+  function playVideo() {
+    if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
+    else { setVolume(document.getElementById('volumeSlider').value || 100); player.playVideo(); }
+  }
+
   function toggleLearning() {
     isLearningMode = !isLearningMode;
-    pCount = 0; lCount = 0; vCount = 0;
-    isTransitioning = false;
-    document.getElementById('learningToggle').innerText = isLearningMode ? "Stop Learning" : "Start Learning";
-    document.getElementById('statusLabel').innerText = isLearningMode ? "Mode: Active Repetition" : "Mode: Normal Play";
+    pCount = 0; lCount = 0; vCount = 0; currentStage = 0;
+    const btn = document.getElementById('learningToggle');
+    btn.innerText = isLearningMode ? "Stop Learning" : "Start Learning";
+    btn.style.background = isLearningMode ? "#2E7D32" : "#990000";
   }
 
   function onPlayerStateChange(event) {
@@ -930,21 +926,14 @@
   function startHighlighting() {
     if (highlightTimer) clearInterval(highlightTimer);
     highlightTimer = setInterval(() => {
-      const currentTime = player.getCurrentTime();
-      
-      // BLOCK 1: If we are in a jump, wait until the player actually reaches the destination
-      if (isTransitioning) {
-        if (Math.abs(currentTime - lastTargetTime) < 1.0) {
-            isTransitioning = false; // Successfully arrived, resume logic
-            console.log("--- ARRIVED AT TARGET ---");
-        }
-        return; 
-      }
+      if (isJumping) return;
 
+      const currentTime = player.getCurrentTime();
       let activeV = null, activeP = null;
+
       for (const [vNum, pTimes] of Object.entries(verseTimings)) {
         if (currentTime >= pTimes[0] && currentTime < (verseTimings[parseInt(vNum)+1]?.[0] || 9999)) {
-          activeV = vNum;
+          activeV = parseInt(vNum);
           pTimes.forEach((t, i) => { if (currentTime >= t) activeP = i; });
           break;
         }
@@ -954,80 +943,99 @@
         if (currentActivePada !== `${activeV}-${activeP}`) {
           updateUI(activeV, activeP);
           currentActivePada = `${activeV}-${activeP}`;
+          if (currentStage === 0) pCount = 0; 
         }
 
         if (isLearningMode) {
           const pReps = parseInt(document.getElementById('padaReps').value) || 1;
           const lReps = parseInt(document.getElementById('lineReps').value) || 1;
           const vReps = parseInt(document.getElementById('verseReps').value) || 1;
+          const status = document.getElementById('statusLabel');
           const timings = verseTimings[activeV];
-          const nextBoundary = timings[activeP + 1] || (verseTimings[parseInt(activeV) + 1]?.[0] || 9999);
+          const nextBoundary = timings[activeP + 1] || (verseTimings[activeV + 1]?.[0] || 9999);
 
-          // LOGIC TRIGGER
-          if (currentTime >= (nextBoundary - 0.4)) {
-            isTransitioning = true; // Lock the script
+          if (currentStage === 0) status.innerText = `Pada ${activeP + 1}: ${pCount + 1}/${pReps}`;
+          else if (currentStage === 1) status.innerText = `Line ${(activeP < 2) ? 1 : 2}: ${lCount + 1}/${lReps}`;
+          else if (currentStage === 2) status.innerText = `Verse ${activeV}: ${vCount + 1}/${vReps}`;
 
-            if (pCount < (pReps - 1)) {
-              pCount++;
-              lastTargetTime = timings[activeP];
-              console.log(`[REPEATING PADA] ${activeP+1} (${pCount+1}/${pReps})`);
-              player.seekTo(lastTargetTime, true);
+          if (currentTime >= (nextBoundary - 0.3)) {
+            let jumpTarget = -1;
+
+            if (currentStage === 0) {
+              if (pCount < (pReps - 1)) {
+                pCount++; jumpTarget = timings[activeP];
+              } else if (activeP === 3) {
+                currentStage = 1; lCount = 0; jumpTarget = timings[0];
+              }
             } 
-            else if ((activeP === 1 || activeP === 3) && lCount < (lReps - 1)) {
-              lCount++;
-              pCount = 0; 
-              lastTargetTime = (activeP === 1) ? timings[0] : timings[2];
-              console.log(`[REPEATING LINE] ${(activeP===1)?1:2} (${lCount+1}/${lReps})`);
-              player.seekTo(lastTargetTime, true);
+           else if (currentStage === 1) {
+              // --- END OF LINE 1 (PADA 2) ---
+              if (activeP === 1) { 
+                if (lCount < (lReps - 1)) {
+                  lCount++;
+                  jumpTarget = timings[0]; // Repeat Line 1
+                } else {
+                  // LINE 1 FINISHED
+                  lCount = 0; 
+                  status.innerText = `Line 2: 1/${lReps}`;
+                  
+                  // THE PUSH: Move the playhead slightly past the boundary 
+                  // to prevent the 100ms loop from re-triggering this block.
+                  isJumping = true;
+                  player.seekTo(nextBoundary + 0.1, true); 
+                  setTimeout(() => { isJumping = false; }, 1000);
+                  return; // Exit the interval early
+                }
+              } 
+              // --- END OF LINE 2 (PADA 4) ---
+              else if (activeP === 3) {
+                if (lCount < (lReps - 1)) {
+                  lCount++;
+                  jumpTarget = timings[2]; // Repeat Line 2
+                } else {
+                  // BOTH LINES FINISHED
+                  currentStage = 2;
+                  vCount = 0;
+                  jumpTarget = timings[0]; // Start Full Verse
+                }
+              }
             }
-            else if (activeP === 3 && vCount < (vReps - 1)) {
-              vCount++;
-              pCount = 0; lCount = 0;
-              lastTargetTime = timings[0];
-              console.log(`[REPEATING VERSE] (${vCount+1}/${vReps})`);
-              player.seekTo(lastTargetTime, true);
+            else if (currentStage === 2) {
+              if (activeP === 3) {
+                if (vCount < (vReps - 1)) {
+                  vCount++; jumpTarget = timings[0];
+                } else {
+                  // VERSE COMPLETE - Move to next Verse
+                  currentStage = 0; pCount = 0; lCount = 0; vCount = 0;
+                  const nextVerseStart = verseTimings[activeV + 1]?.[0];
+                  if (nextVerseStart !== undefined) {
+                    jumpTarget = nextVerseStart;
+                    console.log("Verse " + activeV + " complete. Jumping to Verse " + (activeV + 1));
+                  } else {
+                    player.pauseVideo();
+                    console.log("All Verses complete.");
+                  }
+                }
+              }
             }
-            else {
-              // Reset all for the next natural section
-              pCount = 0;
-              if (activeP === 1) lCount = 0;
-              if (activeP === 3) { lCount = 0; vCount = 0; }
-              isTransitioning = false; // Don't lock, just let it flow
-              console.log("[FLOWING] Moving to next section...");
+
+            if (jumpTarget !== -1) {
+              isJumping = true;
+              player.seekTo(jumpTarget, true);
+              setTimeout(() => { isJumping = false; }, 1200);
             }
           }
         }
       }
-    }, 50);
+    }, 100);
   }
 
   function updateUI(vNum, pIdx) {
-    if (currentActiveVerse !== vNum) {
-      document.querySelectorAll('.verse-grid').forEach(g => g.classList.remove('active'));
-      document.querySelector(`.verse-container[data-verse="${vNum}"] .verse-grid`)?.classList.add('active');
-      currentActiveVerse = vNum;
-    }
     document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
     document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
             .forEach(p => p.classList.add('highlight-active'));
   }
-
   function stopHighlighting() { clearInterval(highlightTimer); }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.addEventListener('click', (e) => {
-      const pada = e.target.closest('.pada');
-      if (pada) {
-        pCount = 0; lCount = 0; vCount = 0;
-        isTransitioning = false;
-        const vNum = pada.closest('.verse-container').dataset.verse;
-        const pIdx = parseInt(pada.dataset.index);
-        player.seekTo(verseTimings[vNum][pIdx], true);
-        player.playVideo();
-      }
-    });
-  });
 </script>
-
 </body>
 </html>
