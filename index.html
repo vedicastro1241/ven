@@ -99,7 +99,7 @@
     padding: 10px; 
     border-radius: 8px; 
     /* THIS IS THE KEY: It leaves room for the sticky header */
-    scroll-margin-top: 180px; 
+    scroll-margin-top: 250px; 
 }
 .pada {
   cursor: pointer; /* Changes mouse to a hand icon */
@@ -139,7 +139,7 @@
       
       <div class="control-group">
         <span>Vol</span>
-        <input type="range" id="volumeSlider" min="0" max="100" value="70" oninput="setVolume(this.value)">
+        <input type="range" id="volumeSlider" min="0" max="100" value="40" oninput="setVolume(this.value)">
       </div>
 
       <div class="control-group">
@@ -159,15 +159,15 @@
       <div class="rep-group-container">
         <div class="control-group">
           <label>Pada Reps:</label>
-          <input type="number" id="padaReps" value="1" min="0">
+          <input type="number" id="padaReps" value="2" min="0">
         </div>
         <div class="control-group">
           <label>Line Reps:</label>
-          <input type="number" id="lineReps" value="2" min="0">
+          <input type="number" id="lineReps" value="1" min="0">
         </div>
         <div class="control-group">
           <label>Verse Reps:</label>
-          <input type="number" id="verseReps" value="2" min="0">
+          <input type="number" id="verseReps" value="1" min="0">
         </div>
         <button id="learningToggle" onclick="toggleLearning()">Start Learning</button>
       </div>
@@ -722,7 +722,7 @@
   ];
 
   const verseTimings = {
-    1: [4, 7, 11, 14], 2: [18, 20.7, 23.7, 26.3], 3: [41.5, 46, 51, 56],
+    1: [4.9, 7.3, 11.2, 14], 2: [18, 20.7, 23.7, 26.3], 3: [41.5, 46, 51, 56],
     4: [81.4, 85, 88.6, 92.5], 5: [96.4, 101.1, 105, 109.2], 6: [114.8, 119.5, 124, 128.5],
     7: [134, 137.1, 141.2, 145.6], 8: [150.7, 155, 159.6, 163.7], 9: [168.9, 173.5, 177.7, 182],
     10: [187.3, 190.5, 194.5, 199], 11: [204.2, 208.4, 212.7, 217.2], 12: [222.5, 226.7, 231.2, 235.4],
@@ -757,7 +757,7 @@ function setSpeed(rate) {
     isLearningMode = !isLearningMode;
     pCount = 0; lCount = 0; vCount = 0; currentStage = 0;
     const btn = document.getElementById('learningToggle');
-    btn.innerText = isLearningMode ? "Stop Learning" : "Start Learning";
+    btn.innerText = isLearningMode ? "Practice - ON" : "Practice - OFF";
     btn.style.background = isLearningMode ? "#2E7D32" : "#990000";
   }
 
