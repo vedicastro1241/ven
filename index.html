@@ -792,10 +792,19 @@
   }
 
   function setVolume(val) { if (player?.setVolume) player.setVolume(val); }
-  function playVideo() {
-    if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
-    else { setVolume(document.getElementById('volumeSlider').value || 100); player.playVideo(); }
+function playVideo() {
+  const btn = document.getElementById('playBtn');
+  
+  if (player.getPlayerState() == YT.PlayerState.PLAYING) {
+    player.pauseVideo();
+    btn.innerText = "Play Audio";
+  } else {
+    setVolume(document.getElementById('volumeSlider').value || 100);
+    player.playVideo();
+    btn.innerText = "Pause Audio";
   }
+}
+
   
 function setSpeed(rate) {
   if (player && player.setPlaybackRate) {
