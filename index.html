@@ -110,26 +110,44 @@
   background-color: #f0f0f0; /* Subtle grey on hover */
   border-radius: 4px;
 }
-    .home-btn {
+  .home-btn {
     position: fixed;
-    top: 20px;         /* Anchored to top */
-    right: 30px;       /* Anchored to right */
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
+    top: 20px;
+    right: 30px;
+    width: 54px;
+    height: 54px;
+    /* Pure white with high transparency for glass effect */
+    background: rgba(255, 255, 255, 0.7); 
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    /* Light border creates the "edge" of the glass */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 16px; /* Apple-style rounded corner */
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    /* Soft, airy shadow instead of muddy black */
+    box-shadow: 0 8px 24px rgba(188, 108, 37, 0.15); 
     cursor: pointer;
-    z-index: 2000;    /* High z-index to stay above the header */
-    transition: all 0.2s ease;
+    z-index: 2000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
   }
+
+  .home-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(188, 108, 37, 0.25);
+  }
+
+  .home-btn svg {
+    /* Uses your theme's gold/brown color to make it "pop" */
+    fill: #BC6C25; 
+    width: 26px;
+    height: 26px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  }
+
 
 /* Fix for Fullscreen scrolling */
 :fullscreen .main-wrapper { 
