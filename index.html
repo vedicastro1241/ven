@@ -150,6 +150,7 @@
           <option value="1" selected>1x</option>
           <option value="1.25">1.25x</option>
           <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
         </select>
       </div>
     </div>
@@ -746,7 +747,12 @@
     if (player.getPlayerState() == YT.PlayerState.PLAYING) player.pauseVideo();
     else { setVolume(document.getElementById('volumeSlider').value || 100); player.playVideo(); }
   }
-
+  
+function setSpeed(rate) {
+  if (player && player.setPlaybackRate) {
+    player.setPlaybackRate(parseFloat(rate));
+  }
+}
   function toggleLearning() {
     isLearningMode = !isLearningMode;
     pCount = 0; lCount = 0; vCount = 0; currentStage = 0;
