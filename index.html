@@ -25,7 +25,7 @@
   }
 
   .learning-panel {
-    margin-top: 20px; padding: 15px; background: #FFF9F0;
+    margin-top: 20px; padding: 15px; background: #FFF5F2;
     border: 1px solid #BC6C25; border-radius: 12px;
     display: flex; flex-direction: column; gap: 10px;
   }
@@ -833,14 +833,28 @@ function setSpeed(rate) {
     player.setPlaybackRate(parseFloat(rate));
   }
 }
-  function toggleLearning() {
+function toggleLearning() {
     isLearningMode = !isLearningMode;
     pCount = 0; lCount = 0; vCount = 0; currentStage = 0;
+    
     const btn = document.getElementById('learningToggle');
-    btn.innerText = isLearningMode ? "Practice - ON" : "Practice - OFF";
-   /* btn.style.background = isLearningMode ? "#2E7D32" : "#990000"; */
-    btn.style.background = isLearningMode ? "#166534" : "#991B1B";
-  }
+    const panel = document.querySelector('.learning-panel'); // Grab the container
+    
+    if (isLearningMode) {
+        btn.innerText = "Practice - ON";
+        btn.style.background = "#166534"; // Your deep green
+        // Change panel to a "Clean White" to stop the green ghosting
+        panel.style.background = "#F0FDF4"; // Very faint mint (neutralizes red ghosting)
+        panel.style.borderColor = "#166534";
+    } else {
+        btn.innerText = "Practice - OFF";
+        btn.style.background = "#991B1B"; // Your deep red
+        // Back to the "Warm Paper" look
+        panel.style.background = "#FFF9F0"; 
+        panel.style.borderColor = "#BC6C25";
+    }
+}
+
 
   function onPlayerStateChange(event) {
     if (event.data == YT.PlayerState.PLAYING) startHighlighting();
