@@ -1074,26 +1074,19 @@ function toggleLearning() {
   }
 
 function updateUI(vNum, pIdx) {
-    // 1. Update Highlighting
+    // 1. Highlighting
     document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
     document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
             .forEach(p => p.classList.add('highlight-active'));
 
-    // 2. Smart Line-by-Line Scrolling
-    // Only scroll at the start of Line 1 (pIdx 0) or Line 2 (pIdx 2)
+    // 2. Line-by-Line Centered Scrolling
     if (pIdx === 0 || pIdx === 2) {
         const verseElement = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
-        if (verseElement) {
-            // Target the specific pada element to center that specific line
-            const targetLine = verseElement.querySelector(`.pada[data-index="${pIdx}"]`);
-            if (targetLine) {
-                targetLine.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
-            }
+        const targetLine = verseElement?.querySelector(`.pada[data-index="${pIdx}"]`);
+        if (targetLine) {
+            targetLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        currentActiveVerse = vNum; // Keep track of verse for other logic
+        currentActiveVerse = vNum;
     }
 }
 
@@ -1143,35 +1136,41 @@ document.getElementById('toggle-meanings').addEventListener('click', function() 
 
     padas.forEach(pada => {
         let meaning = pada.nextElementSibling;
-        
-        // 1. Create the meaning element if it doesn't exist
         if (!meaning || !meaning.classList.contains('meaning-text')) {
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
-            // Clean brackets and assign text in one step
+            // Removes brackets and text inside them
             meaning.textContent = pada.dataset.m.replace(/\s*\([^)]*\)/g, "");
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
-        
-        // 2. Toggle visibility
         meaning.style.display = isShowing ? 'none' : 'block';
     });
 
-    // 3. Toggle Credits (placed below the button)
-    if (credits) {
-        credits.style.display = isShowing ? 'none' : 'block';
-    }
-
-    // 4. Update Button Label
+    if (credits) credits.style.display = isShowing ? 'none' : 'block';
     this.innerText = isShowing ? "Show Meanings" : "Hide Meanings";
 
-    // 5. Smart Re-center: If a pada is currently highlighted, ensure it stays in view
-    const activePada = document.querySelector('.highlight-active');
-    if (!isShowing && activePada) {
-        activePada.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Re-center active line after layout shift
+    const activeLine = document.querySelector('.highlight-active');
+    if (!isShowing && activeLine) activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 
+
+document.addEventListener('click', function (e) {
+    const pada = e.target.closest('.pada');
+    if (pada && player) {
+        const vContainer = pada.closest('.verse-container');
+        const vNum = parseInt(vContainer.getAttribute('data-verse'));
+        const pIdx = parseInt(pada.getAttribute('data-index'));
+
+        if (verseTimings[vNum] && verseTimings[vNum][pIdx] !== undefined) {
+            isJumping = true;
+            pCount = 0; lCount = 0; vCount = 0; currentStage = 0; 
+            player.seekTo(verseTimings[vNum][pIdx], true);
+            player.playVideo();
+            setTimeout(() => { isJumping = false; }, 1000);
+        }
+    }
+});
 
 
 
