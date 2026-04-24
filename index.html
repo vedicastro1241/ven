@@ -1089,8 +1089,7 @@ document.getElementById('toggle-meanings').addEventListener('click', function() 
         if (!meaning || !meaning.classList.contains('meaning-text')) {
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
-            // Added brackets here
-            meaning.textContent = `(${pada.dataset.m})`; 
+            meaning.textContent = pada.dataset.m;
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
         
