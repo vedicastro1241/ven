@@ -171,13 +171,26 @@
 
 /* The Meaning Text (Appears below the verse) */
 .meaning-text {
-    font-size: 15px;       /* Increased size */
-    color: #444;           /* Darker for better visibility */
+    font-size: 15px;
+    /* Option: Deep Olive/Moss Green - very readable and spiritual */
+    color: #4B5320; 
     font-style: italic;
-    line-height: 1.5;
-    margin: 5px 0 15px 0;  /* Slightly more space between verses */
+    line-height: 1.6;
+    margin: 8px 0 20px 0;
     display: block;
-    font-weight: 400;      /* Clear, standard weight */
+    font-weight: 500; /* Medium weight for better readability on cream */
+    
+    /* Adds a subtle "commentary" border using your theme's gold color */
+    border-left: 2px solid #BC6C25;
+    padding-left: 15px;
+    
+    /* Smooth entrance when toggled */
+    animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 
