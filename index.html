@@ -275,24 +275,63 @@
     transform: translateY(-2px);
   }
 
-  /* --- MOBILE OPTIMIZATION --- */
+    /* --- MOBILE OPTIMIZATION --- */
   @media (max-width: 600px) {
-    .player-header { top: 5px; border-radius: 18px; padding: 12px; }
+    /* Header transition and hiding logic */
+    .player-header { 
+      top: 10px; 
+      border-radius: 18px; 
+      padding: 12px; 
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+    }
+
+    /* This class is triggered by JS when audio plays */
+    .header-hidden {
+      transform: translateY(-120%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .main-heading { font-size: 18px; }
     .controls-bar { gap: 8px; }
-    #playBtn, #fullscreenBtn, .secondary-btn { padding: 6px 12px; font-size: 11px; }
     
-    .learning-panel { padding: 8px; border-radius: 30px; }
+    #playBtn, #fullscreenBtn, .secondary-btn { 
+      padding: 6px 12px; 
+      font-size: 11px; 
+    }
+    
+    /* Compact Practice Panel */
+    .learning-panel { 
+      padding: 8px; 
+      border-radius: 30px; 
+    }
     .rep-group-container { gap: 6px; }
     .learning-panel label { font-size: 10px; }
     input[type="number"] { width: 30px; height: 25px; font-size: 11px; }
     
-    .verse-grid { flex-direction: column; gap: 10px; padding: 15px; border-radius: 20px; }
+    /* Verse Grid Layout */
+    .verse-container {
+      scroll-margin-top: 120px; /* Reduced offset since header hides */
+      margin-bottom: 30px;
+    }
+    .verse-grid { 
+      flex-direction: column; 
+      gap: 12px; 
+      padding: 15px; 
+      border-radius: 20px; 
+    }
     .sanskrit { font-size: 26px; text-align: center; }
     .roman { font-size: 20px; text-align: center; }
     .verse-num { font-size: 14px; }
     
-    .home-btn { top: 10px; right: 10px; width: 40px; height: 40px; }
+    /* Small Home Button */
+    .home-btn { 
+      top: 10px; 
+      right: 10px; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 12px;
+    }
   }
 
   /* --- FULLSCREEN FIX --- */
@@ -300,7 +339,14 @@
     background-color: #FDFCF9; 
     padding: 20px; 
     min-height: 100vh; 
+    overflow-y: auto;
   }
+
+  /* Ensure smooth scrolling globally for centered lines */
+  html {
+    scroll-behavior: smooth;
+  }
+
 </style>
 
 
@@ -1011,10 +1057,20 @@ function toggleLearning() {
 }
 
 
-  function onPlayerStateChange(event) {
-    if (event.data == YT.PlayerState.PLAYING) startHighlighting();
-    else stopHighlighting();
-  }
+function onPlayerStateChange(event) {
+    const header = document.querySelector('.player-header');
+    
+    if (event.data == YT.PlayerState.PLAYING) {
+        startHighlighting();
+        // This class is added on all devices, but CSS only hides it on mobile
+        header.classList.add('header-hidden');
+    } else {
+        stopHighlighting();
+        // Brings header back when paused or stopped
+        header.classList.remove('header-hidden');
+    }
+}
+
 
   function startHighlighting() {
     if (highlightTimer) clearInterval(highlightTimer);
@@ -1232,6 +1288,12 @@ document.addEventListener('click', function (e) {
     }
 });
 
+document.addEventListener('touchstart', function(e) {
+    if (e.touches[0].clientY < 60) { // If user taps near the top
+        const header = document.querySelector('.player-header');
+        header.classList.remove('header-hidden');
+    }
+}, {passive: true});
 
 
   
