@@ -150,6 +150,31 @@
     height: 26px;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
   }
+/* The Toggle Button */
+.secondary-btn {
+    background-color: #f0f0f0;
+    color: #444;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px; /* Reduced font for the button */
+    transition: background 0.2s;
+}
+
+.secondary-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* The Meaning Text (Appears below the verse) */
+.meaning-text {
+    font-size: 11px;       /* Significantly smaller than Sanskrit */
+    color: #888;           /* Faded grey so it's less distracting */
+    font-style: italic;
+    line-height: 1.2;
+    margin: 2px 0 8px 15px; /* Indented slightly */
+    display: block;
+}
 
 
 /* Fix for Fullscreen scrolling */
@@ -205,7 +230,7 @@
     <div class="controls-bar">
       <button onclick="playVideo()" id="playBtn">Play Audio</button>
       <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
-      <button id="toggle-meanings">Show Meanings</button>
+      <button id="toggle-meanings" class="secondary-btn">Show Meanings</button>
       <div class="control-group">
         <span>Vol</span>
         <input type="range" id="volumeSlider" min="0" max="100" value="40" oninput="setVolume(this.value)">
@@ -1020,11 +1045,12 @@ function toggleLearning() {
 
   document.getElementById('toggle-meanings').addEventListener('click', function() {
     const padas = document.querySelectorAll('.pada');
-    const isShowing = this.innerText.includes("Hide");
+    const isShowing = this.innerText === "Hide Meanings";
 
     padas.forEach(pada => {
         let meaning = pada.nextElementSibling;
         
+        // Create if it doesn't exist
         if (!meaning || !meaning.classList.contains('meaning-text')) {
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
@@ -1032,12 +1058,15 @@ function toggleLearning() {
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
         
+        // Toggle display
         meaning.style.display = isShowing ? 'none' : 'block';
     });
 
-    // Update button text
+    // Update button appearance
     this.innerText = isShowing ? "Show Meanings" : "Hide Meanings";
+    this.style.backgroundColor = isShowing ? "#f0f0f0" : "#d1e7dd"; // Light green when ON
 });
+
 
   
 </script>
