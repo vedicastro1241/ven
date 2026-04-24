@@ -103,6 +103,15 @@
     text-decoration: none;
     font-weight: bold;
   }
+  
+.meaning-active {
+    color: #990000 !important;   /* Matches Sanskrit Red */
+    border-left-color: #990000 !important; /* Bold border */
+    font-weight: 600;
+    transform: translateX(5px);   /* Slight nudge for visual pop */
+    transition: all 0.3s ease;
+}
+
 
   /* --- COMPACT PRACTICE PANEL --- */
   .learning-panel {
@@ -1190,12 +1199,24 @@ function onPlayerStateChange(event) {
   }
 
 function updateUI(vNum, pIdx) {
-    // 1. Highlighting
+    // 1. Clear previous highlights for both padas and meanings
     document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
-    document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
-            .forEach(p => p.classList.add('highlight-active'));
+    document.querySelectorAll('.meaning-text').forEach(m => m.classList.remove('meaning-active'));
 
-    // 2. Line-by-Line Centered Scrolling
+    // 2. Highlighting
+    const activePadas = document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`);
+    
+    activePadas.forEach(p => {
+        p.classList.add('highlight-active');
+        
+        // Find the meaning-text directly under this pada and highlight it too
+        const meaning = p.nextElementSibling;
+        if (meaning && meaning.classList.contains('meaning-text')) {
+            meaning.classList.add('meaning-active');
+        }
+    });
+
+    // 3. Line-by-Line Centered Scrolling
     if (pIdx === 0 || pIdx === 2) {
         const verseElement = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
         const targetLine = verseElement?.querySelector(`.pada[data-index="${pIdx}"]`);
@@ -1205,6 +1226,7 @@ function updateUI(vNum, pIdx) {
         currentActiveVerse = vNum;
     }
 }
+
 
 
   function stopHighlighting() { clearInterval(highlightTimer); }
