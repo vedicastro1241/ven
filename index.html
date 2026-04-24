@@ -1299,22 +1299,34 @@ document.getElementById('toggle-meanings').addEventListener('click', function() 
 
     padas.forEach(pada => {
         let meaning = pada.nextElementSibling;
+        
         if (!meaning || !meaning.classList.contains('meaning-text')) {
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
-            // Removes brackets and text inside them
+            // Strips brackets: (text) -> ""
             meaning.textContent = pada.dataset.m.replace(/\s*\([^)]*\)/g, "");
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
+        
+        // Use 'block' for the meanings themselves so they sit below the padas
         meaning.style.display = isShowing ? 'none' : 'block';
     });
 
-    if (credits) credits.style.display = isShowing ? 'none' : 'block';
+    // ADJUSTED: Use 'inline-block' for credits so it stays in the horizontal row
+    if (credits) {
+        credits.style.display = isShowing ? 'none' : 'inline-block';
+    }
+
     this.innerText = isShowing ? "Show Meanings" : "Hide Meanings";
 
-    // Re-center active line after layout shift
+    // RE-CENTER: Handles the shift when the page grows vertically
     const activeLine = document.querySelector('.highlight-active');
-    if (!isShowing && activeLine) activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!isShowing && activeLine) {
+        // Slight delay (50ms) ensures the browser has calculated the new height
+        setTimeout(() => {
+            activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+    }
 });
 
 
