@@ -1057,21 +1057,49 @@ function toggleLearning() {
     }, 100);
   }
 
-  function updateUI(vNum, pIdx) {
+function updateUI(vNum, pIdx) {
+    // 1. Update Highlighting
     document.querySelectorAll('.pada').forEach(p => p.classList.remove('highlight-active'));
     document.querySelectorAll(`.verse-container[data-verse="${vNum}"] .pada[data-index="${pIdx}"]`)
             .forEach(p => p.classList.add('highlight-active'));
 
-    if (currentActiveVerse !== vNum) {
-      const verseElement = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
-      if (verseElement) {
-        verseElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      currentActiveVerse = vNum;
+    // 2. Smart Line-by-Line Scrolling
+    // Only scroll at the start of Line 1 (pIdx 0) or Line 2 (pIdx 2)
+    if (pIdx === 0 || pIdx === 2) {
+        const verseElement = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
+        if (verseElement) {
+            // Target the specific pada element to center that specific line
+            const targetLine = verseElement.querySelector(`.pada[data-index="${pIdx}"]`);
+            if (targetLine) {
+                targetLine.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }
+        }
+        currentActiveVerse = vNum; // Keep track of verse for other logic
     }
-  }
+}
+
 
   function stopHighlighting() { clearInterval(highlightTimer); }
+function scrollToActiveLine(vNum, pIndex) {
+    // Only scroll at the start of Line 1 (0) or Line 2 (2)
+    if (pIndex === 0 || pIndex === 2) {
+        const verseContainer = document.querySelector(`.verse-container[data-verse="${vNum}"]`);
+        if (!verseContainer) return;
+
+        // Find the specific pada based on index
+        const activePada = verseContainer.querySelector(`.pada[data-index="${pIndex}"]`);
+        
+        if (activePada) {
+            activePada.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center' 
+            });
+        }
+    }
+}
 
   document.addEventListener('click', function (e) {
     const pada = e.target.closest('.pada');
