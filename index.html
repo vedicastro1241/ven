@@ -59,6 +59,20 @@
     border: 1px solid #BC6C25; border-radius: 20px; cursor: pointer;
     font-weight: bold; font-size: 13px;
   }
+#meaning-credits {
+    width: 100%;           /* Ensures it drops to its own line */
+    font-size: 11px;
+    color: #BC6C25;
+    margin-top: 8px;       /* Small gap under button */
+    font-style: italic;
+    animation: fadeIn 0.3s ease;
+}
+
+#meaning-credits a {
+    color: #990000;
+    text-decoration: none;
+    font-weight: bold;
+}
 
   /* Fullscreen adjustments */
   :fullscreen .main-heading, :fullscreen .instruction-text { display: none; }
@@ -250,6 +264,8 @@
       <button onclick="playVideo()" id="playBtn">Play Audio</button>
       <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
       <button id="toggle-meanings" class="secondary-btn">Show Meanings</button>
+      <div id="meaning-credits" style="display: none;">
+            Source: <a href="#">Shlokam.org - https://shlokam.org/shloka/venkatesa-suprabhatam.htm</a>
       <div class="control-group">
         <span>Vol</span>
         <input type="range" id="volumeSlider" min="0" max="100" value="40" oninput="setVolume(this.value)">
@@ -1123,25 +1139,39 @@ function scrollToActiveLine(vNum, pIndex) {
 document.getElementById('toggle-meanings').addEventListener('click', function() {
     const padas = document.querySelectorAll('.pada');
     const isShowing = this.innerText === "Hide Meanings";
+    const credits = document.getElementById('meaning-credits');
 
     padas.forEach(pada => {
         let meaning = pada.nextElementSibling;
         
+        // 1. Create the meaning element if it doesn't exist
         if (!meaning || !meaning.classList.contains('meaning-text')) {
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
-            meaning.textContent = pada.dataset.m;
-          // This removes everything inside ( ) including the parentheses themselves
+            // Clean brackets and assign text in one step
             meaning.textContent = pada.dataset.m.replace(/\s*\([^)]*\)/g, "");
-
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
         
+        // 2. Toggle visibility
         meaning.style.display = isShowing ? 'none' : 'block';
     });
 
+    // 3. Toggle Credits (placed below the button)
+    if (credits) {
+        credits.style.display = isShowing ? 'none' : 'block';
+    }
+
+    // 4. Update Button Label
     this.innerText = isShowing ? "Show Meanings" : "Hide Meanings";
+
+    // 5. Smart Re-center: If a pada is currently highlighted, ensure it stays in view
+    const activePada = document.querySelector('.highlight-active');
+    if (!isShowing && activePada) {
+        activePada.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 });
+
 
 
 
