@@ -205,7 +205,7 @@
     <div class="controls-bar">
       <button onclick="playVideo()" id="playBtn">Play Audio</button>
       <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
-      
+      <button id="toggle-meanings">Show Meanings</button>
       <div class="control-group">
         <span>Vol</span>
         <input type="range" id="volumeSlider" min="0" max="100" value="40" oninput="setVolume(this.value)">
@@ -1017,6 +1017,29 @@ function toggleLearning() {
       }
     }
   });
+
+  document.getElementById('toggle-meanings').addEventListener('click', function() {
+    const padas = document.querySelectorAll('.pada');
+    const isShowing = this.innerText.includes("Hide");
+
+    padas.forEach(pada => {
+        let meaning = pada.nextElementSibling;
+        
+        if (!meaning || !meaning.classList.contains('meaning-text')) {
+            meaning = document.createElement('div');
+            meaning.className = 'meaning-text';
+            meaning.textContent = pada.dataset.m;
+            pada.parentNode.insertBefore(meaning, pada.nextSibling);
+        }
+        
+        meaning.style.display = isShowing ? 'none' : 'block';
+    });
+
+    // Update button text
+    this.innerText = isShowing ? "Show Meanings" : "Hide Meanings";
+});
+
+  
 </script>
 </body>
 </html>
