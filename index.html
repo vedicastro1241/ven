@@ -256,52 +256,58 @@
 <div class="main-wrapper">
   <div class="player-header">
     <div class="main-heading">Veṅkaṭeśvara Suprabhātam</div>
-    <p class="instruction-text" style="font-size: 13px; color: #666; margin-top: 5px;">Interactive Learning & Verse Sync</p>
-    
-    <div id="youtube-player"></div>
+<p class="instruction-text" style="font-size: 13px; color: #666; margin-top: 5px;">Interactive Learning & Verse Sync</p>
 
-    <div class="controls-bar">
-      <button onclick="playVideo()" id="playBtn">Play Audio</button>
-      <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
-      <button id="toggle-meanings" class="secondary-btn">Show Meanings</button>
-      <div id="meaning-credits" style="display: none;">
-            Source: <a href="#">Shlokam.org - https://shlokam.org/shloka/venkatesa-suprabhatam.htm</a>
-      <div class="control-group">
+<div id="youtube-player"></div>
+
+<div class="controls-bar">
+    <button onclick="playVideo()" id="playBtn">Play Audio</button>
+    <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
+    <button id="toggle-meanings" class="secondary-btn">Show Meanings</button>
+
+    <!-- 1. FIXED: Closed the div and cleaned up the link -->
+    <div id="meaning-credits" style="display: none; width: 100%; margin: 10px 0; font-size: 11px;">
+        Source: <a href="https://shlokam.org/shloka/venkatesa-suprabhatam.htm" target="_blank" style="color: #990000; text-decoration: none; font-weight: bold;">Shlokam.org</a>
+    </div>
+
+    <!-- 2. FIXED: These are now properly outside the credits div -->
+    <div class="control-group">
         <span>Vol</span>
         <input type="range" id="volumeSlider" min="0" max="100" value="40" oninput="setVolume(this.value)">
-      </div>
+    </div>
 
-      <div class="control-group">
+    <div class="control-group">
         <span>Speed</span>
         <select id="speedSelect" onchange="setSpeed(this.value)">
-          <option value="0.5">0.5x</option>
-          <option value="0.75">0.75x</option>
-          <option value="1" selected>1x</option>
-          <option value="1.25">1.25x</option>
-          <option value="1.5">1.5x</option>
-          <option value="2">2x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.75">0.75x</option>
+            <option value="1" selected>1x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2x</option>
         </select>
-      </div>
     </div>
+</div> <!-- End of controls-bar -->
 
-    <div class="learning-panel">
-      <div class="rep-group-container">
+<div class="learning-panel">
+    <div class="rep-group-container">
         <div class="control-group">
-          <label>Pada Reps:</label>
-          <input type="number" id="padaReps" value="2" min="0">
+            <label>Pada Reps:</label>
+            <input type="number" id="padaReps" value="2" min="0">
         </div>
         <div class="control-group">
-          <label>Line Reps:</label>
-          <input type="number" id="lineReps" value="1" min="0">
+            <label>Line Reps:</label>
+            <input type="number" id="lineReps" value="1" min="0">
         </div>
         <div class="control-group">
-          <label>Verse Reps:</label>
-          <input type="number" id="verseReps" value="1" min="0">
+            <label>Verse Reps:</label>
+            <input type="number" id="verseReps" value="1" min="0">
         </div>
         <button id="learningToggle" onclick="toggleLearning()">Practice - OFF</button>
-      </div>
-      <div id="statusLabel">Mode: Normal Play</div>
     </div>
+    <div id="statusLabel">Mode: Normal Play</div>
+</div>
+
   </div>
 
  <div id="lyrics-content">
