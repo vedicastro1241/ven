@@ -152,30 +152,34 @@
   }
 /* The Toggle Button */
 .secondary-btn {
-    background-color: #f0f0f0;
-    color: #444;
-    border: 1px solid #ccc;
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 8px 15px; 
+    background: transparent; 
+    color: #BC6C25;
+    border: 1px solid #BC6C25; 
+    border-radius: 20px; 
     cursor: pointer;
-    font-size: 12px; /* Reduced font for the button */
-    transition: background 0.2s;
+    font-weight: bold; 
+    font-size: 13px;
+    transition: all 0.2s ease;
 }
 
 .secondary-btn:hover {
-    background-color: #e0e0e0;
+    background: #BC6C25;
+    color: #ffffff; /* Contrast text when hovered */
 }
+
 
 /* The Meaning Text (Appears below the verse) */
 .meaning-text {
-    font-size: 13px;       /* Increased for better readability */
-    color: #555;           /* Slightly darker for contrast */
+    font-size: 15px;       /* Increased size */
+    color: #444;           /* Darker for better visibility */
     font-style: italic;
-    line-height: 1.4;      /* More breathing room */
-    margin: 4px 0 10px 0;  /* Spacing between lines */
+    line-height: 1.5;
+    margin: 5px 0 15px 0;  /* Slightly more space between verses */
     display: block;
-    max-width: 90%;        /* Prevents text from hitting the edge */
+    font-weight: 400;      /* Clear, standard weight */
 }
+
 
 
 
@@ -232,7 +236,7 @@
     <div class="controls-bar">
       <button onclick="playVideo()" id="playBtn">Play Audio</button>
       <button id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
-      <button id="toggle-meanings">Show Meanings</button>
+      <button id="toggle-meanings" class="secondary-btn">Show Meanings</button>
       <div class="control-group">
         <span>Vol</span>
         <input type="range" id="volumeSlider" min="0" max="100" value="40" oninput="setVolume(this.value)">
@@ -1046,8 +1050,7 @@ function toggleLearning() {
   });
 
 document.getElementById('toggle-meanings').addEventListener('click', function() {
-    // Select ONLY padas inside the sanskrit column
-    const padas = document.querySelectorAll('.column.sanskrit .pada');
+    const padas = document.querySelectorAll('.pada');
     const isShowing = this.innerText === "Hide Meanings";
 
     padas.forEach(pada => {
@@ -1056,7 +1059,8 @@ document.getElementById('toggle-meanings').addEventListener('click', function() 
         if (!meaning || !meaning.classList.contains('meaning-text')) {
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
-            meaning.textContent = pada.dataset.m;
+            // Added brackets here
+            meaning.textContent = `(${pada.dataset.m})`; 
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
         
@@ -1064,8 +1068,8 @@ document.getElementById('toggle-meanings').addEventListener('click', function() 
     });
 
     this.innerText = isShowing ? "Show Meanings" : "Hide Meanings";
-    this.style.backgroundColor = isShowing ? "#f0f0f0" : "#d1e7dd"; 
 });
+
 
 
   
