@@ -1103,6 +1103,9 @@ document.getElementById('toggle-meanings').addEventListener('click', function() 
             meaning = document.createElement('div');
             meaning.className = 'meaning-text';
             meaning.textContent = pada.dataset.m;
+          // This removes everything inside ( ) including the parentheses themselves
+            meaning.textContent = pada.dataset.m.replace(/\s*\([^)]*\)/g, "");
+
             pada.parentNode.insertBefore(meaning, pada.nextSibling);
         }
         
